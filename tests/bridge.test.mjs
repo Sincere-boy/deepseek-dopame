@@ -10,7 +10,7 @@ import { createHarnessBridge } from '../src/backend/bridge.mjs'
 
 async function fixture(t, handler, ready = Promise.resolve()) {
   const dir = await mkdtemp('/tmp/dshb-')
-  const upstream = createServer(handler)
+  const upstream = createServer((req, res) => { if (!auth(req, res)) handler(req, res) })
   const bridge = createHarnessBridge({ socketPath: join(dir, 'up.sock'), ready, launchToken: () => 'test-token',
     websocket: { default: WebSocket, WebSocketServer } })
   const sockets = new Set()
@@ -98,7 +98,8 @@ test('preserves binary messages and answers upstream heartbeats independently', 
     socket.on('pong', data => pong.resolve(data.toString()))
     socket.ping('heartbeat')
   })
-  await call('/api/dopame/bootstrap')
+  // A restarted backend must reauthenticate an already-open page's socket,
+  // without requiring that page to run bootstrap again.
   // A browser-facing peer that never sends Pong must not prevent the bridge
   // itself from satisfying its independent upstream liveness contract.
   const client = new WebSocket('ws://localhost/mux', {

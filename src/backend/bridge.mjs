@@ -15,15 +15,24 @@ export function createHarnessBridge({ socketPath, ready, launchToken, websocket,
       response.on('error', reject)
     }).on('error', reject).end()
   })
+  function authenticate(authority) {
+    if (!cookies.has(authority)) {
+      const pending = collect('/?token=' + encodeURIComponent(launchToken()), { host: authority }).then(({ response }) => {
+        const cookie = response.headers['set-cookie']?.map(row => row.split(';')[0]).join('; ')
+        if (!cookie) throw new Error('Harness did not issue an authentication cookie')
+        return cookie
+      })
+      cookies.set(authority, pending)
+      pending.catch(() => { if (cookies.get(authority) === pending) cookies.delete(authority) })
+    }
+    return cookies.get(authority)
+  }
   const server = createServer(async (req, res) => {
     try {
       await ready
       const authority = req.headers.host ?? 'acde.local'
+      const cookie = await authenticate(authority)
       if (req.url === '/api/dopame/bootstrap') {
-        const auth = await collect('/?token=' + encodeURIComponent(launchToken()), { host: authority })
-        const cookie = auth.response.headers['set-cookie']?.map(row => row.split(';')[0]).join('; ')
-        if (!cookie) throw new Error('Harness did not issue an authentication cookie')
-        cookies.set(authority, cookie)
         const page = await collect('/', { cookie, host: authority })
         res.writeHead(page.response.statusCode, {
           'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
@@ -32,8 +41,9 @@ export function createHarnessBridge({ socketPath, ready, launchToken, websocket,
         return
       }
       const proxy = request({
-        ...options(req.url, { ...req.headers, cookie: cookies.get(authority) ?? '' }), method: req.method,
+        ...options(req.url, { ...req.headers, cookie }), method: req.method,
       }, response => {
+        if (response.statusCode === 401) cookies.delete(authority)
         if (response.statusCode === 403) reportRejection({ host: authority, origin: req.headers.origin })
         res.writeHead(response.statusCode, response.headers)
         response.pipe(res)
@@ -48,36 +58,39 @@ export function createHarnessBridge({ socketPath, ready, launchToken, websocket,
   })
   const clients = new WebSocketServer({ noServer: true, perMessageDeflate: false })
   const closeCode = code => code === 1005 ? 1000 : code === 1006 ? 1011 : code
-  server.on('upgrade', (req, socket, head) => {
-    const cookie = cookies.get(req.headers.host ?? 'acde.local')
-    if (!cookie) { socket.destroy(); return }
-    // Each hop owns RFC 6455 control frames, so Harness heartbeats are
-    // answered independently of the page's rendering loop.
-    const remote = new WebSocket(`ws://${req.headers.host ?? 'acde.local'}${req.url}`, {
-      createConnection: () => connect(socketPath), perMessageDeflate: false,
-      headers: { cookie, ...req.headers.origin && { origin: req.headers.origin } },
-    })
-    let client
-    remote.on('open', () => clients.handleUpgrade(req, socket, head, connection => {
-      client = connection
-      remote.on('message', (data, binary) => {
-        if (client.readyState === WebSocket.OPEN) client.send(data, { binary })
+  server.on('upgrade', async (req, socket, head) => {
+    try {
+      await ready
+      const cookie = await authenticate(req.headers.host ?? 'acde.local')
+      if (socket.destroyed) return
+      // Each hop owns RFC 6455 control frames, so Harness heartbeats are
+      // answered independently of the page's rendering loop.
+      const remote = new WebSocket(`ws://${req.headers.host ?? 'acde.local'}${req.url}`, {
+        createConnection: () => connect(socketPath), perMessageDeflate: false,
+        headers: { cookie, ...req.headers.origin && { origin: req.headers.origin } },
       })
-      client.on('message', (data, binary) => {
-        if (remote.readyState === WebSocket.OPEN) remote.send(data, { binary })
+      let client
+      remote.on('open', () => clients.handleUpgrade(req, socket, head, connection => {
+        client = connection
+        remote.on('message', (data, binary) => {
+          if (client.readyState === WebSocket.OPEN) client.send(data, { binary })
+        })
+        client.on('message', (data, binary) => {
+          if (remote.readyState === WebSocket.OPEN) remote.send(data, { binary })
+        })
+        client.on('close', (code, reason) => remote.close(closeCode(code), reason))
+        client.on('error', () => remote.terminate())
+      }))
+      remote.on('close', (code, reason) => {
+        if (client) client.close(closeCode(code), reason)
+        else socket.destroy()
       })
-      client.on('close', (code, reason) => remote.close(closeCode(code), reason))
-      client.on('error', () => remote.terminate())
-    }))
-    remote.on('close', (code, reason) => {
-      if (client) client.close(closeCode(code), reason)
-      else socket.destroy()
-    })
-    remote.on('error', () => {
-      if (client) client.close(1011, 'Harness connection failed')
-      else socket.destroy()
-    })
-    socket.on('close', () => { if (!client) remote.terminate() })
+      remote.on('error', () => {
+        if (client) client.close(1011, 'Harness connection failed')
+        else socket.destroy()
+      })
+      socket.on('close', () => { if (!client) remote.terminate() })
+    } catch { socket.destroy() }
   })
   server.on('close', () => {
     for (const client of clients.clients) client.terminate()

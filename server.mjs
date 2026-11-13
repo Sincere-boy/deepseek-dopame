@@ -2,7 +2,8 @@ import { createHarnessBridge } from './src/backend/bridge.mjs'
 import { StringDecoder } from 'node:string_decoder'
 import { pathToFileURL } from 'node:url'
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 const runtime = resolve(import.meta.dirname, '../web/runtime')
@@ -16,18 +17,21 @@ if (!existsSync(join(runtime, 'node_modules/@deepseek-ai/dsh/lib/bin.js'))) thro
 process.env.WS_NO_BUFFER_UTIL = '1'
 process.env.WS_NO_UTF_8_VALIDATE = '1'
 const websocket = await import(/* @vite-ignore */ pathToFileURL(join(runtime, 'node_modules/ws/wrapper.mjs')).href)
+// Generations must never unlink each other's Harness listen socket on reload.
+const childSockets = mkdtempSync(join(tmpdir(), 'dsh-'))
 
 let token
 const { promise: ready, resolve: markReady, reject: markFailed } = Promise.withResolvers()
 // Retain startup failure for the page even when no request has arrived yet.
 ready.catch(() => {})
 const child = spawn(process.execPath, [
-  '--import', preload, join(runtime, 'node_modules/@deepseek-ai/dsh/lib/bin.js'),
+  '--import', join(runtime, 'dopame-child-lifetime.mjs'), '--import', preload,
+  join(runtime, 'node_modules/@deepseek-ai/dsh/lib/bin.js'),
   'web', '--patch', join(runtime, 'dopame.patch.yml'), '--port', '3080', '--trusted-host', 'acde.local', '--no-open',
 ], {
   cwd: data,
-  env: { ...process.env, DSH_HOME: join(data, 'harness'), DSH_TELEMETRY_DISABLED: '1' },
-  stdio: ['ignore', 'pipe', 'pipe'],
+  env: { ...process.env, ACDE_APP_SOCKETS: childSockets, DSH_HOME: join(data, 'harness'), DSH_TELEMETRY_DISABLED: '1' },
+  stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
 })
 const startupTimer = setTimeout(() => {
   markFailed(new Error('Harness startup timed out'))
@@ -58,13 +62,15 @@ child.on('exit', (code, signal) => {
   // acdert owns backend restart policy; a dead Harness cannot keep serving.
   process.exit(code === 0 ? 0 : 1)
 })
-for (const signal of ['SIGTERM', 'SIGINT']) {
-  process.on(signal, () => {
-    child.kill(signal)
-    setTimeout(() => { child.kill('SIGKILL'); process.exit(0) }, 2500).unref()
-  })
-}
+process.on('exit', () => {
+  if (child.connected) child.disconnect()
+  else child.kill('SIGTERM')
+  rmSync(childSockets, { recursive: true, force: true })
+})
+// Exit the old backend before acdert binds the new generation's public socket.
+// The child supervises its own graceful shutdown through the IPC channel.
+for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => process.exit(0))
 createHarnessBridge({
-  socketPath: join(process.env.ACDE_APP_SOCKETS, '3080.sock'), ready, launchToken: () => token, websocket,
+  socketPath: join(childSockets, '3080.sock'), ready, launchToken: () => token, websocket,
   reportRejection: facts => console.error('Harness trust rejection', JSON.stringify(facts)),
 }).listen(3000)
