@@ -15,6 +15,10 @@ acde check
 acde dev
 ```
 
+在官方 Dopame 桌面中启动：先按[官方安装说明](https://docs.dopame.ai/zh/start/install/)安装桌面包，再运行 `acde dev --desktop dopame`，从 Apps 列表打开 DeepSeek Harness。
+
 `prepare:harness` 构建上游并打包运行时；日常 `acde build/dev` 只构建应用。上游变化后重新运行 `prepare:harness`，仅打包规则变化时可运行 `npm run prepare:runtime`。
 
 应用使用独立数据目录。密钥通过设置页保存，源码和构建产物不携带密钥。当前仍在迁移验证中；完整功能尚未验收。
+
+验证范围、已通过功能与待验证路径见 [运行验证](docs/validation.md)。`npm test` 运行通信适配层回归测试。
