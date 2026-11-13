@@ -14,7 +14,7 @@ acde check
 acde build
 ```
 
-4 项回归测试覆盖：authority 隔离的认证 cookie、Host/Origin 一致性、未结束响应的实时流转发、升级握手及双向二进制数据、启动失败响应。上述命令已通过。
+4 项回归测试覆盖：authority 隔离的认证 cookie、Host/Origin 一致性、未结束响应的实时流转发、双向二进制消息及上游心跳应答、启动失败响应。上述命令已通过。
 
 真实模型验证会话可用下列命令复核，参数传应用私有数据中的验证会话文件；脚本只输出工具名称和计数，不输出原始会话内容。
 
@@ -22,7 +22,7 @@ acde build
 node scripts/verify-session.mjs /absolute/path/session.v3.jsonl.zstd
 ```
 
-本轮记录有 173 个事件，16 种工具有成功结果，没有非预期工具错误。`edit` 首次调用因没有本次启动后的新鲜读取而被拒绝；模型读取文件后重试成功。这验证了原有文件观察约束仍生效。
+本轮记录有 324 个主会话事件，27 种 Standard 工具均有成功结果，并核对了 3 个子会话的实际输出。没有非预期工具错误。`edit` 首次调用因没有本次启动后的新鲜读取而被拒绝；模型读取文件后重试成功。这验证了原有文件观察约束仍生效。脚本同时对照真实请求头中的完整工具清单，不能只凭模型的总结宣称通过。
 
 ## 已实测能力
 
@@ -44,13 +44,25 @@ node scripts/verify-session.mjs /absolute/path/session.v3.jsonl.zstd
 | 工作流 | `workflow` 执行无子代理脚本，返回 `DOPAME_WORKFLOW_OK` |
 | 代理状态查询 | `list_agents` 正常返回空列表 |
 | 技能 | `skill` 加载测试工作区技能，模型回复 `DOPAME_SKILL_OK` |
-| 应用日志 | 本轮结束时应用页面错误日志和失败网络请求为空 |
+| 目标状态 | `create_goal`、`get_goal`、`update_goal` 完成临时测试目标的创建、读取和完成 |
+| 后台取消 | `job_kill` 终止指定 sleep 30 测试任务，状态 killed，signal SIGTERM |
+| 图片 | `read_image` 成功读取 64×64 PNG，像素数据核对为红色 |
+| 计划模式 | `/plan`、`exit_plan_mode` 显示计划审批卡，点击批准后退出并执行只读检查 |
+| 独立子代理 | `subagent` 读取文件，返回实际 `SUBAGENT_READ_OK` 和正确文件内容 |
+| Fork 子代理 | `subagent_fork` 启动等待，`interrupt_agent` 中断该回合；`send_message` 恢复后返回 `FORK_RESUME_OK` |
+| 子代理跟进 | `send_message` 唤起已完成的子代理，返回 `SUBAGENT_FOLLOWUP_OK` |
+| Ralph | `ralph` 执行 1 轮，子会话通过 structured_output 返回 complete 和 `RALPH_SMOKE_OK` |
 | 产物独立性 | 运行时 9 个符号链接均在产物内，没有指向原仓库或丢失目标的链接 |
+| 密钥 | 对 dist 和 .acde 全部文件扫描真实 API key，未发现匹配；密钥仅在应用私有数据中 |
 
-## 继续验证的路径
+## 工具范围
 
-Standard 当前注册 27 个工具。除上述 16 种外，`create_goal`、`get_goal`、`update_goal`、`exit_plan_mode`、`job_kill`、`read_image`、`ralph`、`subagent`、`subagent_fork`、`send_message`、`interrupt_agent` 尚未做完整真实调用验证。原始实现及其依赖已随运行时保留，不能将“已注册”当作这些路径的端到端通过证明。
+Standard 当前注册的 27 个工具均已完成真实调用验证。这里证明的是本轮代表性路径，不代表所有参数组合、错误分支或其他预设也已穷举验证。
 
 `list_subagent_models`、`cordis_inspect_list`、`session_search` 不在该上游 Standard 预设的 27 项工具中；测试对话对此报告不可用。它们并非迁移遗漏，不能为了让检查变绿而改写默认工具集。
 
 桌面模式会记录官方桌面自带 NPU 组件找不到额外 `dopame-harness` 程序的警告；这是桌面附加组件，DeepSeek 应用自身启动与工具调用不依赖它。
+
+## 长连接修复
+
+在 acdert 0.0.9 中观察到原始 WebSocket 字节隧道约 4 分钟后触发上游心跳关闭。适配层改为两个独立 WebSocket 协议端点，各自处理控制帧和关闭语义，不关闭 Harness 的心跳检查。回归测试使用不会自动回 Pong 的页面侧客户端，确认适配层仍可向上游正常回应心跳并转发二进制消息。

@@ -4,6 +4,8 @@ import { createServer, request } from 'node:http'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { once } from 'node:events'
+import { connect } from 'node:net'
+import WebSocket, { WebSocketServer } from 'ws'
 import { createHarnessBridge } from '../src/backend/bridge.mjs'
 
 async function fixture(t, handler, ready = Promise.resolve()) {
@@ -82,34 +84,33 @@ test('streams the first chunk before the upstream response finishes', { timeout:
   assert.equal(await done, 'data: first\n\ndata: last\n\n')
 })
 
-test('forwards upgrade headers and binary traffic in both directions', { timeout: 3000 }, async t => {
+test('preserves binary messages and answers upstream heartbeats independently', { timeout: 3000 }, async t => {
   const { upstream, path, call } = await fixture(t, auth)
   const bytes = Buffer.from([0, 1, 2, 255])
-  upstream.on('upgrade', (req, socket) => {
+  const pong = Promise.withResolvers()
+  const wsServer = new WebSocketServer({ server: upstream })
+  t.after(() => { for (const ws of wsServer.clients) ws.terminate(); wsServer.close() })
+  wsServer.on('connection', (socket, req) => {
     assert.equal(req.headers.cookie, 'auth=localhost')
     assert.equal(req.headers.origin, 'http://localhost')
-    socket.write('HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: smoke\r\n\r\n')
-    socket.on('data', data => socket.write(data))
+    socket.on('message', (data, binary) => socket.send(data, { binary }))
+    socket.on('pong', data => pong.resolve(data.toString()))
+    socket.ping('heartbeat')
   })
   await call('/api/dopame/bootstrap')
-  await new Promise((resolve, reject) => {
-    request({ socketPath: path, path: '/mux', headers: {
-      host: 'localhost', origin: 'http://localhost', connection: 'Upgrade', upgrade: 'smoke',
-    } }).on('upgrade', (res, socket) => {
-      assert.equal(res.statusCode, 101)
-      assert.equal(res.headers.upgrade, 'smoke')
-      const chunks = []
-      socket.on('data', chunk => {
-        chunks.push(chunk)
-        if (Buffer.concat(chunks).length >= bytes.length) {
-          assert.deepEqual(Buffer.concat(chunks), bytes)
-          socket.destroy(); resolve()
-        }
-      })
-      socket.on('error', reject)
-      socket.write(bytes)
-    }).on('error', reject).end()
+  // A browser-facing peer that never sends Pong must not prevent the bridge
+  // itself from satisfying its independent upstream liveness contract.
+  const client = new WebSocket('ws://localhost/mux', {
+    createConnection: () => connect(path), autoPong: false, origin: 'http://localhost',
   })
+  t.after(() => client.terminate())
+  await once(client, 'open')
+  const echoed = once(client, 'message')
+  client.send(bytes)
+  const [data, binary] = await echoed
+  assert.deepEqual(data, bytes)
+  assert.equal(binary, true)
+  assert.equal(await pong.promise, 'heartbeat')
 })
 
 test('reports startup failure to the page', { timeout: 3000 }, async t => {

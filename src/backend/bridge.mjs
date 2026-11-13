@@ -1,4 +1,6 @@
 import { createServer, request } from 'node:http'
+import { connect } from 'node:net'
+import WebSocket, { WebSocketServer } from 'ws'
 
 // Carry the Harness protocol without changing authority-bound authentication.
 export function createHarnessBridge({ socketPath, ready, launchToken, reportRejection = () => {} }) {
@@ -44,27 +46,42 @@ export function createHarnessBridge({ socketPath, ready, launchToken, reportReje
       res.end(error.message)
     }
   })
+  const clients = new WebSocketServer({ noServer: true, perMessageDeflate: false })
+  const closeCode = code => code === 1005 ? 1000 : code === 1006 ? 1011 : code
   server.on('upgrade', (req, socket, head) => {
     const cookie = cookies.get(req.headers.host ?? 'acde.local')
     if (!cookie) { socket.destroy(); return }
-    const proxy = request(options(req.url, { ...req.headers, cookie }))
-    proxy.on('upgrade', (response, remote, remoteHead) => {
-      socket.write(`HTTP/1.1 ${response.statusCode} ${response.statusMessage}\r\n`)
-      for (let i = 0; i < response.rawHeaders.length; i += 2) {
-        socket.write(response.rawHeaders[i] + ': ' + response.rawHeaders[i + 1] + '\r\n')
-      }
-      socket.write('\r\n')
-      if (remoteHead.length) socket.write(remoteHead)
-      if (head.length) remote.write(head)
-      socket.on('error', () => remote.destroy())
-      remote.on('error', () => socket.destroy())
-      socket.on('close', () => remote.destroy())
-      remote.on('close', () => socket.destroy())
-      socket.pipe(remote).pipe(socket)
+    // Each hop owns RFC 6455 control frames. In acdert 0.0.9 a raw tunnel
+    // fails the upstream's Ping/Pong deadline after several idle minutes.
+    const remote = new WebSocket(`ws://${req.headers.host ?? 'acde.local'}${req.url}`, {
+      createConnection: () => connect(socketPath), perMessageDeflate: false,
+      headers: { cookie, ...req.headers.origin && { origin: req.headers.origin } },
     })
-    proxy.on('response', () => socket.destroy())
-    proxy.on('error', () => socket.destroy())
-    proxy.end()
+    let client
+    remote.on('open', () => clients.handleUpgrade(req, socket, head, connection => {
+      client = connection
+      remote.on('message', (data, binary) => {
+        if (client.readyState === WebSocket.OPEN) client.send(data, { binary })
+      })
+      client.on('message', (data, binary) => {
+        if (remote.readyState === WebSocket.OPEN) remote.send(data, { binary })
+      })
+      client.on('close', (code, reason) => remote.close(closeCode(code), reason))
+      client.on('error', () => remote.terminate())
+    }))
+    remote.on('close', (code, reason) => {
+      if (client) client.close(closeCode(code), reason)
+      else socket.destroy()
+    })
+    remote.on('error', () => {
+      if (client) client.close(1011, 'Harness connection failed')
+      else socket.destroy()
+    })
+    socket.on('close', () => { if (!client) remote.terminate() })
+  })
+  server.on('close', () => {
+    for (const client of clients.clients) client.terminate()
+    clients.close()
   })
   return server
 }
