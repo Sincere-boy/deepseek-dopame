@@ -6,16 +6,16 @@
 
 平台文档以 [Dopame 官方中文文档](https://docs.dopame.ai/zh/) 为准。开发时按需查阅原始页面，保留代码块、表格和链接的上下文，不维护纯文本副本。
 
-开发环境需要 Node.js 24+、Corepack 与 acde。
+开发环境需要 Node.js 24+、Corepack、acde，以及按[官方安装说明](https://docs.dopame.ai/zh/start/install/)安装的 Dopame 桌面包。
 
 ```sh
 npm install
 npm run prepare:harness
 acde check
-acde dev
+npm run dev
 ```
 
-在官方 Dopame 桌面中启动：先按[官方安装说明](https://docs.dopame.ai/zh/start/install/)安装桌面包，再运行 `acde dev --desktop dopame`，从 Apps 列表打开 DeepSeek Harness。
+`npm run dev` 在官方 Dopame 桌面中启动，从 Apps 列表打开 DeepSeek Harness。窗口移动和 Dock 布局应在此模式下验证；`acde dev` 的单应用模式会填满宿主窗口。
 
 `prepare:harness` 构建上游并打包运行时；日常 `acde build/dev` 只构建应用。上游变化后重新运行 `prepare:harness`，仅打包规则变化时可运行 `npm run prepare:runtime`。
 
