@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepSeek Harness</title></head>
+<body style="margin:0;background:#171717;color:#eee;font:16px system-ui">
+<div id="dopame-boot" style="padding:32px">正在启动 DeepSeek Harness…</div>
+<script type="module">
+try {
+  const response = await fetch('/api/dopame/bootstrap')
+  if (!response.ok) throw new Error(await response.text())
+  const html = await response.text()
+  const page = new DOMParser().parseFromString(html, 'text/html')
+  for (const element of page.head.querySelectorAll('link[rel="stylesheet"]')) {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = '/app/deepseek-harness/assets/' + element.getAttribute('href').split('/').pop()
+    document.head.append(link)
+  }
+  document.body.innerHTML = page.body.innerHTML
+  for (const original of page.querySelectorAll('script')) {
+    const script = document.createElement('script')
+    if (original.type) script.type = original.type
+    if (original.src) {
+      const src = original.getAttribute('src')
+      script.src = src.includes('/assets/') ? '/app/deepseek-harness/assets/' + src.split('/').pop() : src
+      await new Promise((resolve, reject) => {
+        script.onload = resolve; script.onerror = () => reject(new Error('加载失败：' + script.src))
+        document.head.append(script)
+      })
+    } else {
+      script.textContent = original.textContent
+      document.head.append(script)
+    }
+  }
+} catch (error) {
+  document.body.textContent = '启动失败：' + error.message
+  console.error(error)
+}
+</script>
+</body></html>

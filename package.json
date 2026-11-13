@@ -1,0 +1,16 @@
+{
+  "name": "deepseek-dopame",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.6.2",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "prepare:harness": "corepack pnpm --dir vendor/harness install --frozen-lockfile && corepack pnpm --dir vendor/harness run build",
+    "dev": "acde dev",
+    "check": "acde check"
+  },
+  "devDependencies": {
+    "vite": "^6.4.6"
+  }
+}

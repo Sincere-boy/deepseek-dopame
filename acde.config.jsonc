@@ -1,0 +1,10 @@
+{
+  "type": "app",
+  "id": "deepseek-harness",
+  "label": "DeepSeek Harness",
+  "icon": "chat",
+  "framework": "script",
+  "size": [1280, 840],
+  "heapMb": 1024,
+  "backend": { "entry": "server.mjs", "port": 3000 }
+}

@@ -2,5 +2,6 @@ node_modules/
 .acde/
 dist/
 public/runtime/
+public/assets/
 .env
 *.log
