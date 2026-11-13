@@ -6,11 +6,15 @@
   "packageManager": "npm@11.6.2",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "prepare:harness": "corepack pnpm --dir vendor/harness install --frozen-lockfile && corepack pnpm --dir vendor/harness run build",
+    "prepare:harness": "corepack pnpm --dir vendor/harness install --frozen-lockfile && corepack pnpm --dir vendor/harness run build && npm run prepare:runtime",
     "dev": "acde dev",
-    "check": "acde check"
+    "check": "acde check",
+    "prepare:runtime": "node scripts/package-runtime.mjs"
   },
   "devDependencies": {
     "vite": "^6.4.6"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

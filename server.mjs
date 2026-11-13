@@ -16,7 +16,7 @@ let failure
 const waiters = []
 const child = spawn(process.execPath, [
   '--import', preload, join(runtime, 'node_modules/@deepseek-ai/dsh/lib/bin.js'),
-  'web', '--port', '3080', '--trusted-host', 'acde.local', '--no-open',
+  'web', '--patch', join(runtime, 'dopame.patch.yml'), '--port', '3080', '--trusted-host', 'acde.local', '--no-open',
 ], {
   cwd: data,
   env: { ...process.env, DSH_HOME: join(data, 'harness'), DSH_TELEMETRY_DISABLED: '1' },

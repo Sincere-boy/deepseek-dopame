@@ -1,0 +1,8 @@
+# Keep workspace selection inside the application on every host platform.
+- id: directory-picker
+  disabled: true
+- insert:
+    - id: dopame-directory-picker
+      name: '@deepseek-ai/dsh-host-directory-picker-browse'
+    - id: dopame-directory-picker-ui
+      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'

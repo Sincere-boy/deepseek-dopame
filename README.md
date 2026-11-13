@@ -15,4 +15,6 @@ acde check
 acde dev
 ```
 
-应用使用独立数据目录，尚未导入宿主机 `~/.dsh` 的配置、密钥或会话。当前仍在迁移验证中；完整功能尚未验收。
+`prepare:harness` 构建上游并打包运行时；日常 `acde build/dev` 只构建应用。上游变化后重新运行 `prepare:harness`，仅打包规则变化时可运行 `npm run prepare:runtime`。
+
+应用使用独立数据目录。密钥通过设置页保存，源码和构建产物不携带密钥。当前仍在迁移验证中；完整功能尚未验收。
