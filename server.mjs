@@ -44,7 +44,7 @@ process.on('SIGINT', () => { child.kill('SIGTERM'); process.exit(0) })
 
 function upstream(path, headers = {}) {
   return { socketPath: join(process.env.ACDE_APP_SOCKETS, '3080.sock'),
-    path, headers: { ...headers, host: 'acde.local', 'accept-encoding': 'identity' } }
+    path, headers: { ...headers, host: headers.host ?? 'acde.local', 'accept-encoding': 'identity' } }
 }
 function collect(path, headers = {}) {
   return new Promise((resolve, reject) => {
@@ -57,7 +57,7 @@ function collect(path, headers = {}) {
   })
 }
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     if (!token && !failure) await Promise.race([
       new Promise(resolve => waiters.push(resolve)),
@@ -65,15 +65,16 @@ createServer(async (req, res) => {
     ])
     if (failure) throw new Error(failure)
     if (req.url === '/api/dopame/bootstrap') {
-      const auth = await collect('/?token=' + encodeURIComponent(token))
+      const auth = await collect('/?token=' + encodeURIComponent(token), { host: req.headers.host })
       cookie = auth.response.headers['set-cookie']?.map(row => row.split(';')[0]).join('; ')
       if (!cookie) throw new Error('Harness did not issue an authentication cookie')
-      const page = await collect('/', { cookie })
+      const page = await collect('/', { cookie, host: req.headers.host })
       res.writeHead(page.response.statusCode, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
       res.end(page.body)
       return
     }
     const proxy = request({ ...upstream(req.url, { ...req.headers, cookie: cookie ?? '' }), method: req.method }, response => {
+      if (response.statusCode === 403) console.error('Harness trust rejection', JSON.stringify({ host: req.headers.host, origin: req.headers.origin, fetchSite: req.headers['sec-fetch-site'] }))
       res.writeHead(response.statusCode, response.headers)
       response.pipe(res)
     })
@@ -84,4 +85,26 @@ createServer(async (req, res) => {
     res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' })
     res.end(error.message)
   }
-}).listen(3000)
+})
+server.on('upgrade', (req, socket, head) => {
+  if (!cookie || failure) { socket.destroy(); return }
+  const proxy = request(upstream(req.url, { ...req.headers, cookie }))
+  proxy.on('upgrade', (response, remote, remoteHead) => {
+    socket.write(`HTTP/1.1 ${response.statusCode} ${response.statusMessage}\r\n`)
+    for (let i = 0; i < response.rawHeaders.length; i += 2) {
+      socket.write(response.rawHeaders[i] + ': ' + response.rawHeaders[i + 1] + '\r\n')
+    }
+    socket.write('\r\n')
+    if (remoteHead.length) socket.write(remoteHead)
+    if (head.length) remote.write(head)
+    socket.on('error', () => remote.destroy())
+    remote.on('error', () => socket.destroy())
+    socket.on('close', () => remote.destroy())
+    remote.on('close', () => socket.destroy())
+    socket.pipe(remote).pipe(socket)
+  })
+  proxy.on('response', () => socket.destroy())
+  proxy.on('error', () => socket.destroy())
+  proxy.end()
+})
+server.listen(3000)

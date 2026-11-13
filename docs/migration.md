@@ -33,7 +33,9 @@
 
 - 已固定完整上游源码，安装工作区依赖，并完成原版完整构建（234 个前端产物）。
 - `acde check` 已通过，初版 `acde build` 已通过。
-- acdert 已创建应用窗口并执行启动页面，尚未验收完整界面。
-- 直接生产部署 CLI 会遗漏 peer 依赖；正在按 workspace 依赖与 peer 闭包打包单一 Cordis 实例。
+- acdert 已渲染完整原版界面，首次内部测试提示可交互关闭，工作区、会话列表、设置与模式选择正常出现。
+- 已修复生产部署缺失的 workspace peer 依赖，采用扁平部署与依赖闭包保留单一 Cordis 实例。
+- 已接入 WebSocket 升级转发；Host/Origin 保留 acdert 后端实际请求值，认证 cookie 按该 authority 签发。未关闭上游同源或认证校验。
+- 连接恢复后 `acde console --level errors` 无错误，界面不再显示重连提示；仍需实际模型与工具验证。
 - 平台适配保存在上游目录之外；用户数据使用应用的 `ACDE_APP_DATA/harness`，不复制或提交密钥。
 - 原始 Harness 服务的可运行结论不能证明迁移完成；后续仍需在 acdert 内验证真实对话、持久化及工具。
