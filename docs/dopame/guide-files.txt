@@ -1,0 +1,1017 @@
+文件与文件夹 | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+文件选择器
+acde:fs
+根
+共享位置
+路径
+常用调用
+安全地写
+错误
+拖进来的文件
+本页内容
+概述
+文件选择器
+acde:fs
+根
+共享位置
+路径
+常用调用
+安全地写
+错误
+拖进来的文件
+文件与文件夹
+存取文件有三种方式:
+标准的文件选择器
+:
+showOpenFilePicker
+、
+showSaveFilePicker
+、
+showDirectoryPicker
+、
+<input type="file">
+. 不需要申请能力, 用户选什么给什么.
+acde:fs
+: 按「根」访问文件: 应用自己的私有文件夹、用户批准过的共享文件夹 (下载、文档 ……)、用户选的文件夹. 适合文件管理器、编辑器这类应用. 要申请
+fs
+.
+私有存储
+:
+navigator.storage.getDirectory()
+(OPFS)、IndexedDB、
+localStorage
+, 应用自己的数据.
+应用用的是句柄和根的 id, 不是绝对路径; 只有桌面和它自带的系统应用看得到路径.
+文件选择器
+文件选择器 一节的链接
+和浏览器里一样:
+const [
+handle
+] = await
+window
+.
+showOpenFilePicker
+(
+{
+types:
+[{ description:
+'
+Markdown
+'
+, accept: {
+'
+text/markdown
+'
+: [
+'
+.md
+'
+] } }]
+,
+}
+)
+const
+text
+= await
+(
+await
+handle
+.
+getFile
+())
+.
+text
+()
+弹出的是系统的对话框 (macOS 的打开 / 保存面板、Windows 的文件对话框、Linux 的 portal).
+选中的文件只给这个页面读写.
+showDirectoryPicker()
+选中的文件夹还会
+授权给应用
+: 它在
+acde:fs
+里作为一个根出现 (
+source: 'granted'
+), 下次启动还在. 默认选的是只读的 (根带
+mode: 'read_only'
+);
+showDirectoryPicker({ mode: 'readwrite' })
+给的是可写的. 用
+fs.revoke(id)
+交还.
+用户取消时 reject
+AbortError
+. headless 会话里没有对话框: 选择器在那里也 reject
+AbortError
+, 除非测试事先回答了它 (
+chooseFiles
+、
+chooseFolder
+、
+chooseSaveFile
+, 见
+端到端测试
+).
+acde:fs
+acde:fs 一节的链接
+{
+"capabilities"
+: {
+"fs"
+:
+true
+} }
+import
+{ fs }
+from
+'
+acde:fs
+'
+const
+roots
+= await
+fs
+.
+roots
+()
+// [{ id: 'private', label: '…', source: 'private', mode: 'writable', reason: null, exists: true }]
+await
+fs
+.
+writeFile
+(
+'
+private
+'
+,
+'
+notes/todo.md
+'
+,
+'
+- 买牛奶
+\n
+'
+, { mkdirs:
+true
+})
+const {
+entries
+} = await
+fs
+.
+list
+(
+'
+private
+'
+,
+'
+notes
+'
+)
+const {
+text
+,
+modifiedMs
+} = await
+fs
+.
+readText
+(
+'
+private
+'
+,
+'
+notes/todo.md
+'
+)
+await
+fs
+.
+writeFile
+(
+'
+private
+'
+,
+'
+notes/todo.md
+'
+,
+text
++
+'
+- 新的一条
+\n
+'
+, { ifModifiedMs:
+modifiedMs
+})
+根
+根 一节的链接
+每个调用的第一个参数是某个根的
+id
+, 第二个是这个根下的路径. 根的
+id
+是一个不透明的名字, 不是路径:
+fs.list('/home/me/Downloads')
+会被拒绝.
+根有三种:
+source
+id
+是什么
+应用怎么得到
+private
+private
+应用自己的数据文件夹, 第一次用到时创建
+"fs": true
+(或
+fs
+的任何取值)
+place
+位置的名字, 如
+downloads
+用户的一个共享文件夹
+写进
+fs.roots
+; 每一个都要用户批准 (见
+共享位置
+)
+granted
+folder-
+加 16 位十六进制数字
+用户选的文件夹
+showDirectoryPicker()
+roots()
+给应用现在能用的每个根返回一项:
+{id, label, source, mode, reason, exists}
+, 共享位置还带
+place
+(位置的名字).
+label
+是给用户看的名字 (选的文件夹就是文件夹名).
+mode
+是
+writable
+、
+read_only
+(选的时候没带
+mode: 'readwrite'
+的文件夹) 或
+unavailable
+; 是
+unavailable
+时,
+reason
+说明原因 (
+the folder does not exist
+),
+exists
+是
+false
+.
+按句柄的名字找到所选文件夹的根:
+const
+handle
+= await
+window
+.
+showDirectoryPicker
+(
+{ mode:
+'
+readwrite
+'
+}
+)
+const
+picked
+=
+(
+await
+fs
+.
+roots
+())
+.
+find
+(
+(
+root
+)
+=>
+root
+.
+source
+===
+'
+granted
+'
+&&
+root
+.
+label
+===
+handle
+.
+name
+)
+await
+fs
+.
+writeFile
+(
+picked
+.
+id
+,
+'
+export.txt
+'
+,
+'
+hello
+'
+)
+工作数据放在
+private
+里.
+它不用批准, 也不用选择器, 总是可写, 也不是别的任何应用的根. 只有该让用户在应用外面找得到的文件, 才用共享位置或选的文件夹. 私有文件夹在磁盘上是
+$XDG_DATA_HOME/acde/files/<应用 id>/
+, 调试时用得上; 应用自己只知道它叫
+private
+.
+共享位置
+共享位置 一节的链接
+{
+"capabilities"
+: {
+"fs"
+: {
+"roots"
+: [
+"
+downloads
+"
+,
+"
+documents
+"
+] } } }
+fs.roots
+按名字列出共享位置:
+desktop
+、
+documents
+、
+downloads
+、
+music
+、
+pictures
+、
+videos
+. 别的名字过不了
+acde check
+:
+fs.roots "work" is not a shared place (desktop, documents, downloads, music, pictures, videos); any other folder is one the user picks (showDirectoryPicker() with "fs": true)
+, 写的是路径时则是
+fs.roots "~/Documents" is not a shared place: write "documents", the runtime finds that folder through the system (also when it was moved)
+.
+private
+和选的文件夹不管
+fs
+取什么值都有, 不用列.
+列出的每个位置各是一项能力
+fs.<位置>
+(
+fs.downloads
+), 要用户批准:
+应用第一次启动前会问用户, 一次问一个位置. 每个提示都得到回答之前,
+应用不开窗口
+;
+acde dev
+会打出一行, 像
+Notes (notes) waits for the user to allow "fs.downloads" …
+. 开发会话里用
+acde allow
+或
+acde deny
+回答, 见
+调试工具
+.
+用户拒绝了某个位置, 应用就不启动. 只跑一个应用的
+acde dev
+这时会在日志里打出
+acdert app notes: Notes: "fs.documents" is denied by the user; acdert app asks for it again the next time it runs
+, 以退出码 1 退出, 下次启动时再问. 在桌面里, 引出提示的那次
+apps.open()
+reject
+Notes: "fs.documents" is denied by the user
+(
+status: 403
+、
+code: 'denied'
+), 这次拒绝会一直留着, 直到被收回: 应用从应用列表里消失, 再打开它也同样 reject. 见
+系统能力
+.
+批准之后, 这个位置在
+roots()
+里是
+{ id: 'downloads', source: 'place', place: 'downloads', … }
+, 它的
+id
+可以当第一个参数:
+fs.list('downloads')
+. 这台机器上没有这个文件夹时, 根带
+mode: 'unavailable'
+, 对它的调用 reject
+ENOENT
+.
+应用跑着的时候用户收回了批准, 这个位置就不在
+roots()
+里了, 对它的调用 reject
+denied
+(见
+错误
+).
+想启动时不问、等用户用到这个位置时再问, 就把
+fs
+设成可选. 这时应用用
+load()
+拿
+acde:fs
+,
+private
+和选的文件夹马上能用, 要某个位置时用
+request()
+问:
+{
+"capabilities"
+: {
+"fs"
+: {
+"roots"
+: [
+"
+downloads
+"
+] } },
+"optional"
+: [
+"
+fs
+"
+] }
+import
+{ load }
+from
+'
+@dopame/acde-api
+'
+import
+{ capabilities }
+from
+'
+acde:capabilities
+'
+const
+fs
+= await
+load
+(
+'
+fs
+'
+)
+const
+status
+= await
+capabilities
+.
+request
+(
+'
+fs.downloads
+'
+)
+// 问用户
+if
+(
+status
+.
+state
+===
+'
+available
+'
+) {
+const {
+entries
+} = await
+fs
+.
+list
+(
+'
+downloads
+'
+)
+}
+批准的规则见
+系统能力
+.
+路径
+路径 一节的链接
+第二个参数是根下的
+相对路径
+, 用
+/
+分隔;
+''
+(或在
+list
+里不写) 就是根本身. 绝对路径、用
+..
+或符号链接跑出根, 都会被拒绝.
+常用调用
+常用调用 一节的链接
+调用
+返回
+roots()
+应用现在能用的根
+list(root, path?, hidden?)
+{root, path, entries, truncated}
+; 包含隐藏的项, 除非
+hidden
+是
+false
+stat(root, path)
+{name, kind, size, modifiedMs, path}
+(不跟随符号链接)
+readText(root, path)
+{text, modifiedMs, size}
+, 最多 64 MiB, 不是 UTF-8 时
+EILSEQ
+readBytes(root, path)
+{data: Uint8Array, modifiedMs, size}
+writeFile(root, path, data, options?)
+写文本或字节; 返回这一项
+{name, kind, size, modifiedMs}
+mkdir(root, path, {recursive?})
+建文件夹
+rename(root, from, to)
+改名 / 移动, 在同一个根里
+delete(root, path)
+删除一个文件或空文件夹:
+{status: 'deleted', path}
+copy(fromRoot, fromPath, toRoot, toDir)
+把一个文件或文件夹复制进另一个根 (或同一个根) 的文件夹
+toDir
+; 返回新的项和它的
+path
+. 名字被占用时加一个数字 (
+todo 2.md
+)
+revoke(id)
+交还用户选的一个文件夹
+要把共享位置或选的文件夹里的文件拿进应用自己的数据, 就复制它:
+await fs.copy('downloads', 'report.txt', 'private', '')
+.
+安全地写
+安全地写 一节的链接
+writeFile
+的选项:
+create
+:
+'always'
+(默认, 没有就建)、
+'new'
+(已存在则
+EEXIST
+)、
+'never'
+(不存在则
+ENOENT
+).
+ifModifiedMs
+: 文件的修改时间和它不一样时不写, 报
+ECONFLICT
+. 读的时候记下
+modifiedMs
+, 写的时候带上, 就不会覆盖别人的修改.
+mkdirs
+: 先建好上层文件夹. 不带它时, 往不存在的文件夹里写会失败, 报
+EINVAL
+.
+写在原文件上 (保留 inode 和权限), 写完 fsync.
+错误
+错误 一节的链接
+失败时 reject 一个
+Error
+, 带
+code
+和
+status
+:
+code
+status
+什么时候
+EINVAL
+400
+参数不对、绝对路径或跑出根的路径、上层文件夹不存在、类型不对、符号链接
+EACCES
+403
+第一个参数不是应用的根、根是只读的、系统不允许
+not_asked
+403
+根是可选的
+fs
+的共享位置, 而还没问过用户:
+request('fs.<位置>')
+会问. 错误上还有
+capability
+(
+fs.downloads
+)
+asking
+403
+这个位置的提示在等用户回答; 错误上有
+capability
+denied
+403
+用户拒绝了这个位置, 或收回了批准; 错误上有
+capability
+ENOENT
+404
+不存在
+EEXIST
+409
+已存在
+ECONFLICT
+409
+打开之后被别人改了或删了
+ENOTEMPTY
+409
+删除非空文件夹
+EFBIG
+413
+超过大小上限
+EILSEQ
+400
+readText
+读到的不是 UTF-8
+ENOSPC
+507
+磁盘满
+EIO
+500
+其它
+try
+{
+await
+fs
+.
+writeFile
+(
+root
+,
+path
+,
+text
+, {
+ifModifiedMs
+})
+}
+catch
+(
+e
+) {
+if
+(
+e
+.
+code
+===
+'
+ECONFLICT
+'
+)
+askToReload
+()
+else
+throw
+e
+}
+常见的错误用法是这样的:
+错误用法
+拒绝
+把路径当根:
+fs.list('/tmp')
+EACCES
+:
+this app may not use the files of /tmp (not one of its roots)
+不在
+fs.roots
+里的位置: 配置是
+"fs": true
+时调
+fs.list('downloads')
+EACCES
+:
+this app may not use the files of downloads (not one of its roots)
+可选的
+fs
+的位置, 在
+request('fs.downloads')
+之前:
+fs.list('downloads')
+not_asked
+:
+Notes: "fs.downloads" is not asked for yet; ask for it with acde:capabilities request("fs.downloads")
+提示在等的时候做同样的调用
+asking
+:
+Notes: "fs.downloads" is waiting for the user's answer
+用户拒绝了或收回了的位置:
+fs.list('downloads')
+denied
+:
+Notes: "fs.downloads" is denied by the user
+第二个参数是绝对路径:
+fs.readText('private', '/etc/hosts')
+EINVAL
+:
+path must be relative to the workspace
+用
+..
+跑出根:
+fs.readText('private', '../x')
+EINVAL
+:
+path escapes the workspace
+往不存在的文件夹里写, 没带
+mkdirs
+EINVAL
+:
+parent directory is missing or outside the workspace
+往选的时候没带
+mode: 'readwrite'
+的文件夹里写
+EACCES
+:
+<folder> was picked read-only
+fs.locate(path)
+或
+fs.openPath(root, path)
+(它们在路径和根之间互相转换)
+EACCES
+:
+fs.locate() works only in system apps that declare shared places
+拖进来的文件
+拖进来的文件 一节的链接
+把文件或文件夹从宿主系统拖进窗口, 页面收到标准的拖拽事件, 最后是
+drop
+,
+dataTransfer
+按标准的方式带着这些文件. 页面拿不到路径.
+拖进来的每个文件或文件夹是
+dataTransfer.items
+里
+kind: 'file'
+的一项;
+item.getAsFileSystemHandle()
+resolve 成
+只读
+的
+FileSystemFileHandle
+或
+FileSystemDirectoryHandle
+(
+createWritable()
+reject
+NotAllowedError
+).
+不超过 64 MiB 的文件也在
+dataTransfer.files
+里. 文件夹和更大的文件不在, 用它们的句柄.
+dataTransfer.types
+是
+['Files']
+; 没有带路径的
+text/uri-list
+或
+text/plain
+.
+要留下拖进来的文件, 把它的内容复制进
+private
+:
+import
+{ fs }
+from
+'
+acde:fs
+'
+addEventListener
+(
+'
+dragover
+'
+,
+(
+event
+)
+=>
+event
+.
+preventDefault
+())
+addEventListener
+(
+'
+drop
+'
+,
+async
+(
+event
+)
+=>
+{
+event
+.
+preventDefault
+()
+const
+items
+=
+[
+...event
+.
+dataTransfer
+.
+items
+]
+.
+filter
+(
+(
+item
+)
+=>
+item
+.
+kind
+===
+'
+file
+'
+)
+const
+handles
+= await
+Promise
+.
+all
+(
+items
+.
+map
+(
+(
+item
+)
+=>
+item
+.
+getAsFileSystemHandle
+()))
+for
+(
+const
+handle
+of
+handles
+) {
+if
+(
+handle
+.
+kind
+!==
+'
+file
+'
+)
+continue
+const
+file
+= await
+handle
+.
+getFile
+()
+await
+fs
+.
+writeFile
+(
+'
+private
+'
+,
+`
+inbox/
+${
+file
+.
+name
+}
+`
+,
+new
+Uint8Array
+(
+await
+file
+.
+arrayBuffer
+()), { mkdirs:
+true
+})
+}
+})
+句柄 (来自拖放、选择器或打开请求) 也可以交给别的应用, 见
+打开应用
+.
+上一页
+窗口
+下一页
+打开应用

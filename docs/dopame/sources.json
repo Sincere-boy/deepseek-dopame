@@ -1,0 +1,122 @@
+[
+  {
+    "url": "https://docs.dopame.ai/zh/",
+    "file": "index.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/start/first-app/",
+    "file": "start-first-app.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/modules/",
+    "file": "reference-modules.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/start/install/",
+    "file": "start-install.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/open/",
+    "file": "guide-open.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/tools/",
+    "file": "guide-tools.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/testing/",
+    "file": "reference-testing.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/backend/",
+    "file": "guide-backend.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/install/",
+    "file": "guide-install.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/services/",
+    "file": "guide-services.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/desktop/",
+    "file": "guide-desktop.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/frameworks/",
+    "file": "guide-frameworks.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/web/",
+    "file": "reference-web.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/platforms/",
+    "file": "reference-platforms.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/manifest/",
+    "file": "reference-manifest.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/doctor/",
+    "file": "guide-doctor.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/mcp/",
+    "file": "guide-mcp.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/testing/",
+    "file": "guide-testing.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/config/",
+    "file": "reference-config.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/agents/",
+    "file": "guide-agents.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/service/",
+    "file": "reference-service.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/env/",
+    "file": "reference-env.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/dev/",
+    "file": "guide-dev.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/assets/",
+    "file": "guide-assets.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/reference/cli/",
+    "file": "reference-cli.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/window/",
+    "file": "guide-window.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/start/project/",
+    "file": "start-project.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/files/",
+    "file": "guide-files.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/config/",
+    "file": "guide-config.txt"
+  },
+  {
+    "url": "https://docs.dopame.ai/zh/guide/capabilities/",
+    "file": "guide-capabilities.txt"
+  }
+]

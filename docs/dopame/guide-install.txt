@@ -1,0 +1,124 @@
+本机安装 | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+找包
+卸载
+发布
+本页内容
+概述
+找包
+卸载
+发布
+本机安装
+acde dev
+只是临时把应用交给运行时. 想让应用一直出现在本机的 Dopame 桌面里:
+终端窗口
+acde
+install
+它先
+acde build
+, 再把包装进
+$XDG_DATA_HOME/acde/packages/<id>
+(默认
+~/.local/share/acde/packages/<id>
+, Windows 上是
+%USERPROFILE%\.local\share\acde\packages\<id>
+). 先复制到临时目录再整体替换, 不会留下半个包. 手写的包 (没有配置、
+package.json
+里自带
+acde
+清单) 装成指向工程的符号链接.
+装好后, 下次启动的会话 (以及
+acde dev --desktop dopame
+) 就能看到它.
+找包
+找包 一节的链接
+按顺序, 同一个 id 先找到的为准:
+ACDE_PATH
+里的目录 (
+acde dev
+用它交出构建结果);
+$XDG_DATA_HOME/acde/packages/*
+;
+$XDG_DATA_DIRS/acde/packages/*
+(系统级安装).
+卸载
+卸载 一节的链接
+删掉
+$XDG_DATA_HOME/acde/packages/<id>
+.
+发布
+发布 一节的链接
+应用商店和
+acde publish
+还在做. 现在分发应用就是分发构建出的包目录 (
+.acde/
+), 放进上面任意一个位置即可.
+上一页
+端到端测试
+下一页
+命令行

@@ -1,0 +1,2415 @@
+测试 API | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+test
+expect
+Acde
+route
+AppWindow
+Locator
+语义树的限制
+Png
+本页内容
+概述
+test
+expect
+Acde
+route
+AppWindow
+Locator
+语义树的限制
+Png
+测试 API
+acde/test
+导出
+test
+、
+expect
+、
+describe
+、
+beforeAll
+、
+beforeEach
+、
+afterAll
+、
+afterEach
+和
+acde/driver
+的一切, 包括类型 (
+Fixtures
+、
+AppWindow
+、
+Locator
+、
+Acde
+、
+E2eSettings
+, 以及下面的选项和结果类型;
+import { type AppWindow } from 'acde/test'
+).
+acde/driver
+只依赖
+node:
+模块, 可以单独在 Node.js / Bun 脚本里用.
+test
+test 一节的链接
+test
+(name: string, body:
+(
+fixtures
+:
+Fixtures
+)
+=>
+unknown, options
+?:
+TestOptions):
+void
+test
+(name: string, options: TestOptions, body:
+(
+fixtures
+:
+Fixtures
+)
+=>
+unknown):
+void
+test
+.
+only
+/
+test
+.
+skip
+/
+test
+.
+todo
+(name)
+/
+test
+.
+if
+(condition)
+type
+TestOptions
+=
+number
+|
+{
+timeout
+?:
+number
+size
+?:
+[width:
+number
+, height:
+number
+]
+localStorage
+?:
+Record
+<
+string
+,
+string
+>
+}
+interface
+Fixtures {
+acde
+:
+Acde
+app
+:
+AppWindow
+|
+null
+home
+:
+string
+settings
+:
+E2eSettings
+}
+数字是以毫秒计的超时.
+localStorage
+在页面载入之前写入 (
+app.seedLocalStorage
+), 然后
+size
+设页面的尺寸 (
+app.resize
+); 两者都需要
+app
+夹具.
+expect
+expect 一节的链接
+expect
+(locator: Locator): LocatorAssertions
+expect
+(window: AppWindow): WindowAssertions
+expect
+(value): bun:test 的 Matchers
+expect
+.
+poll
+(read:
+()
+=>
+T
+|
+Promise
+<
+T
+>
+, options
+?:
+{ timeout?: number; message
+?:
+string }): bun:test 的 Matchers, 每个都返回
+Promise
+expect
+.
+soft
+(locator
+|
+window
+|
+value): 同样的断言; 失败被记下, 测试在结束时失败
+LocatorAssertions
+(都可以加
+.not
+, 都接受
+{timeout}
+):
+toBeVisible()
+toBeHidden()
+toHaveCount(n)
+toHaveText(text, {exact?})
+toContainText(text)
+toHaveValue(text)
+toHaveState(state)
+toBeChecked()
+toBeDisabled()
+toBeEnabled()
+toBeFocused()
+toHaveAttribute(name, value?)
+toHaveClass(text)
+toHaveCSS(property, text)
+(计算后的样式)
+toHaveJSProperty(name, value)
+toBeEmpty()
+toBeEditable()
+toBeInViewport({ratio?})
+toHaveScreenshot(name?, options?)
+WindowAssertions
+:
+toBeOpen()
+toHaveTitle(text)
+toHaveScreenshot(name?, options?)
+text
+是 string 或 RegExp.
+toHaveText
+和
+toContainText
+比较的都是元素的文本内容, 不是它的无障碍名字. 截图选项:
+{maxDiffPixels, maxDiffPixelRatio, threshold, mask: Locator[], timeout}
+.
+Acde
+Acde 一节的链接
+class
+Acde
+{
+static
+launch
+(
+options
+?:
+{
+dirs
+?:
+string
+[]; desktop
+?:
+string
+; app
+?:
+string
+; out
+?:
+string
+cwd
+?:
+string
+; env
+?:
+Record
+<
+string
+,
+string
+>; headless
+?:
+boolean
+timeout
+?:
+number
+; startTimeout
+?:
+number
+}
+)
+:
+Promise
+<
+Acde
+>
+static
+attach
+(
+options
+?:
+{ session
+?:
+number
+; cwd
+?:
+string
+; env
+?:
+Record
+<
+string
+,
+string
+>; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+Acde
+>
+readonly
+desktop
+:
+AppWindow
+readonly
+trace
+:
+Trace
+window
+(
+match
+:
+string
+|
+{ ref
+?:
+string
+; id
+?:
+number
+; app
+?:
+string
+; title
+?:
+string
+|
+RegExp
+}
+)
+:
+AppWindow
+open
+(
+name
+:
+string
+,
+options
+?:
+{ timeout
+?:
+number
+}
+)
+:
+Promise
+<
+AppWindow
+>
+webs
+()
+:
+Promise
+<
+Web
+[]>
+windows
+()
+:
+Promise
+<
+InspectWindow
+[]>
+evaluate
+<
+T
+>
+(
+web
+:
+string
+,
+code
+:
+string
+)
+:
+Promise
+<
+T
+>
+snapshot
+(
+options
+?
+)
+:
+Promise
+<{ text; windows; trees }>
+query
+(
+options
+:
+{ selector
+:
+string
+; window
+?:
+string
+; ref
+?:
+string
+; limit
+?:
+number
+; attributes
+?:
+string
+[] }
+)
+:
+Promise
+<
+QueryResult
+>
+act
+(
+ref
+:
+string
+,
+action
+:
+InspectAction
+,
+arg
+?
+)
+:
+Promise
+<
+ActResult
+>
+run
+(
+steps
+)
+:
+Promise
+<
+ActResult
+>
+screenshot
+(
+web
+:
+string
+,
+options
+?:
+{ path
+?:
+string
+}
+)
+:
+Promise
+<
+Shot
+>
+screen
+(
+options
+?:
+{ path
+?:
+string
+}
+)
+:
+Promise
+<
+Shot
+>
+console
+(
+options
+?:
+{ web
+?
+; since
+?
+; limit
+?
+; level
+?
+}
+)
+:
+Promise
+<{ entries; next; dropped }>
+network
+(
+options
+?:
+{ web
+?
+; since
+?
+; limit
+?
+; failed
+?
+}
+)
+:
+Promise
+<{ entries; next; dropped }>
+waitForRequest
+(
+url
+:
+string
+|
+RegExp
+,
+options
+?:
+{ method
+?
+; web
+?
+; timeout
+?
+}
+)
+:
+Promise
+<
+RequestEntry
+>
+waitForConsole
+(
+text
+:
+string
+|
+RegExp
+,
+options
+?:
+{ level
+?
+; web
+?
+; timeout
+?
+}
+)
+:
+Promise
+<
+ConsoleEntry
+>
+emulate
+(
+options
+:
+{ colorScheme
+?:
+'
+light
+'
+|
+'
+dark
+'
+|
+null
+; reducedMotion
+?:
+boolean
+|
+null
+}
+)
+:
+Promise
+<...>
+chooseFolder
+(
+folder
+:
+string
+|
+null
+)
+:
+Promise
+<
+void
+>
+chooseFiles
+(
+files
+:
+string
+|
+string
+[]
+|
+null
+)
+:
+Promise
+<
+void
+>
+chooseSaveFile
+(
+file
+:
+string
+|
+null
+)
+:
+Promise
+<
+void
+>
+route
+(
+url
+:
+string
+|
+RegExp
+,
+response
+:
+RouteResponse
+,
+options
+?:
+{ method
+?
+; web
+?
+; times
+?
+}
+)
+:
+Promise
+<
+number
+>
+unroute
+(
+id
+?:
+number
+)
+:
+Promise
+<{ removed
+:
+number
+; left
+:
+number
+}>
+clipboard
+()
+:
+Promise
+<
+string
+>
+setClipboard
+(
+text
+:
+string
+)
+:
+Promise
+<
+void
+>
+addInitScript
+(
+code
+:
+string
+,
+options
+?:
+{ web
+?:
+string
+; once
+?:
+boolean
+}
+)
+:
+Promise
+<
+number
+>
+removeInitScript
+(
+id
+?:
+number
+)
+:
+Promise
+<{ removed
+:
+number
+; left
+:
+number
+}>
+reload
+(
+web
+:
+string
+)
+:
+Promise
+<
+void
+>
+resize
+(
+web
+:
+string
+,
+width
+:
+number
+,
+height
+:
+number
+)
+:
+Promise
+<{ width
+:
+number
+; height
+:
+number
+}>
+answerDialog
+(
+web
+:
+string
+,
+answer
+?:
+{ accept
+?:
+boolean
+; text
+?:
+string
+}
+)
+:
+Promise
+<
+void
+>
+dialogs
+(
+options
+?:
+{ web
+?:
+string
+}
+)
+:
+Promise
+<
+Dialog
+[]>
+waitForDialog
+(
+options
+?:
+{ web
+?:
+string
+; type
+?:
+'
+alert
+'
+|
+'
+confirm
+'
+|
+'
+prompt
+'
+; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+Dialog
+>
+input
+(
+web
+:
+string
+,
+events
+:
+InputEvent
+[]
+)
+:
+Promise
+<
+ActResult
+>
+permissions
+()
+:
+Promise
+<{ pending
+:
+PermissionPrompt
+[]; decisions
+:
+PermissionDecision
+[] }>
+waitForPrompt
+(
+match
+?:
+{ app
+?:
+string
+; capability
+?:
+string
+; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+PermissionPrompt
+>
+allow
+(
+match
+?:
+{ app
+?:
+string
+; capability
+?:
+string
+; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+PermissionPrompt
+>
+deny
+(
+match
+?:
+{ app
+?:
+string
+; capability
+?:
+string
+; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+PermissionPrompt
+>
+answer
+(
+prompt
+:
+PermissionPrompt
+|
+number
+,
+allow
+:
+boolean
+)
+:
+Promise
+<
+void
+>
+revoke
+(
+app
+:
+string
+,
+capability
+:
+string
+)
+:
+Promise
+<
+boolean
+>
+drop
+(
+files
+:
+string
+|
+string
+[],
+options
+?:
+{ web
+?:
+string
+; x
+?:
+number
+; y
+?:
+number
+}
+)
+:
+Promise
+<{ web; window; files }>
+ready
+()
+:
+Promise
+<
+boolean
+>
+readonly
+closed
+:
+boolean
+close
+()
+:
+Promise
+<
+void
+>
+}
+interface
+ActResult {
+ok
+:
+boolean
+text
+:
+string
+ended
+?:
+true
+}
+launch
+在工程自己的运行时 (Bun 或 Node.js) 上起一个
+acde dev
+开发会话, 等到所有页面的窗口都出现, 或有批准提示在等 (
+startTimeout
+, 默认 120 秒). 会话没起来时, 它结束那个
+acde dev
+, 抛
+LaunchError
+(一种
+Error
+, 由
+acde/driver
+导出). 它的消息说明启动走到了哪一步, 末尾是
+acde dev
+输出的最后 40 行;
+logs
+里是全部输出 (
+error.logs.tail(5000).text
+),
+phase
+是:
+'exited'
+:
+acde dev exited (1) before it was ready:
+;
+code
+是退出码 (其他阶段里是
+null
+).
+'session'
+:
+acde dev (pid 4242) did not register a session within 120 s in <dir>
+, 接着是一行
+no session yet: its build did not finish, or acdert did not start listening; last output:
+.
+'window'
+:
+acde dev did not start within 120 s:
+, 接着是一行
+acdert runs and answers, but no window appeared (pages: 0, windows: 0) and no approval prompt waits; last output:
+.
+'failed'
+: 等待期间出的其他任何错 (消息就是那个错误的消息, 那个错误也是
+cause
+).
+close()
+结束
+launch
+起的会话: 发 SIGTERM, 10 秒后发 SIGKILL. 对
+attach
+得到的会话, 它只断开连接.
+动作没做成时
+act
+回
+ok: false
+. 只跑一个应用的会话里, 关掉应用唯一的窗口会结束会话, 这是有意的设计: 关掉它的那次
+close
+以
+ok: true
+、
+ended: true
+和文字
+closed w1; acdert exited with it, so acde dev <pid> ended
+resolve;
+closed
+变成 true, 之后的每个请求都以
+acde dev <pid> is no longer connected
+reject. 别的请求进行期间运行时没了, 这个请求以
+acdert closed the connection
+reject (桌面会话里的
+close
+, 以及步骤里关掉窗口的
+run
+, 也是这样).
+choose*
+事先回答页面
+下一次
+弹出的那种选择器;
+null
+当作用户取消; 相对路径按当前目录解析.
+waitFor*
+要在触发之前调用.
+addInitScript
+登记一段代码, 每次载入时在页面自己的脚本之前运行 (
+once
+: 只在下一次载入时);
+web
+是页面名或应用 id, 不给时每个页面都跑这段代码. 它返回一个给
+removeInitScript
+用的 id; 不给 id 时
+removeInitScript
+删掉所有脚本.
+answerDialog
+事先回答页面的下一个
+alert
+/
+confirm
+/
+prompt
+:
+accept: false
+是取消,
+text
+是
+prompt
+回的文字. 没有事先回答时
+confirm
+回 false,
+prompt
+回 null.
+Dialog
+是
+{ type, message, defaultValue, answered, accept, text }
+.
+input
+按页面坐标发原始事件:
+{ type: 'move' | 'down' | 'up' | 'wheel', x, y, button?, dx?, dy? }
+、
+{ type: 'keydown' | 'keyup', key }
+和
+{ type: 'text', text }
+.
+app.mouse
+和
+app.keyboard
+就是用它做的.
+批准提示 (
+PermissionPrompt
+是
+{ id, app, label, capability, reason: 'launch' | 'request' }
+,
+PermissionDecision
+是
+{ app, label, capability, decision: 'granted' | 'denied' }
+):
+allow
+和
+deny
+等一个匹配的提示 (什么都不给时是任何提示), 回答它并返回它;
+waitForPrompt
+只等;
+answer
+回答一个已经拿到的提示. 没有哪个提示会自己得到回答: 必需的能力还在等批准的应用, 在测试回答之前没有窗口.
+revoke
+收回一个决定, 返回原来有没有这个决定. 见
+测试里的批准
+.
+drop
+把系统里的文件拖放到页面上 (默认是桌面页的正中;
+web
+选页面,
+x
+和
+y
+选页面里的一个点). 调用返回后过一小会儿页面才收到标准的
+drop
+事件, 所以要等页面对它做出的反应.
+route
+route 一节的链接
+type
+RouteResponse
+=
+|
+{ status
+?:
+number
+; statusText
+?:
+string
+; headers
+?:
+Record
+<
+string
+,
+string
+>; contentType
+?:
+string
+; body
+?:
+string
+|
+Uint8Array
+; json
+?:
+unknown
+}
+|
+{ abort
+:
+true
+|
+string
+}
+url
+是 glob (
+**
+任意,
+*
+不含
+/
+; 以
+/
+开头时比较路径加查询, 否则比较整个 URL) 或 RegExp. 后加的规则先匹配;
+times
+用完自动删. 只影响 fetch / XHR, 不影响 WebSocket / EventSource.
+AppWindow
+AppWindow 一节的链接
+class
+AppWindow
+{
+getByRole
+(
+role
+:
+string
+,
+options
+?:
+RoleOptions
+)
+:
+Locator
+getByText
+(
+text
+:
+string
+|
+RegExp
+,
+options
+?:
+{ exact
+?:
+boolean
+}
+)
+:
+Locator
+getByLabel
+/
+getByPlaceholder
+/
+getByTitle
+/
+getByAltText
+(
+text
+,
+options
+?
+)
+:
+Locator
+getByTestId
+(
+id
+:
+string
+)
+:
+Locator
+locator
+(
+selector
+:
+string
+)
+:
+Locator
+info
+(
+options
+?
+)
+:
+Promise
+<
+InspectWindow
+>
+isOpen
+()
+:
+Promise
+<
+boolean
+>
+waitFor
+(
+options
+?:
+{ state
+?:
+'
+open
+'
+|
+'
+closed
+'
+; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+void
+>
+web
+()
+:
+Promise
+<
+string
+>
+evaluate
+<
+T
+>
+(
+code
+:
+string
+)
+:
+Promise
+<
+T
+>
+snapshot
+(
+options
+?:
+{ find
+?:
+string
+; diff
+?:
+boolean
+}
+)
+:
+Promise
+<
+string
+>
+screenshot
+(
+options
+?:
+{ path
+?:
+string
+; mask
+?:
+Locator
+[] }
+)
+:
+Promise
+<
+Shot
+>
+press
+(
+keys
+:
+string
+)
+:
+Promise
+<
+ActResult
+>
+focus
+()
+/
+minimize
+()
+/
+restore
+()
+/
+close
+()
+:
+Promise
+<
+ActResult
+>
+readonly
+mouse
+:
+Mouse
+readonly
+keyboard
+:
+Keyboard
+readonly
+clock
+:
+Clock
+addInitScript
+(
+code
+:
+string
+,
+options
+?:
+{ once
+?:
+boolean
+}
+)
+:
+Promise
+<
+number
+>
+reload
+(
+options
+?:
+{ timeout
+?:
+number
+}
+)
+:
+Promise
+<
+void
+>
+resize
+(
+width
+:
+number
+,
+height
+:
+number
+,
+options
+?:
+{ timeout
+?:
+number
+}
+)
+:
+Promise
+<{ width
+:
+number
+; height
+:
+number
+}>
+seedLocalStorage
+(
+entries
+:
+Record
+<
+string
+,
+string
+>,
+options
+?:
+{ timeout
+?:
+number
+}
+)
+:
+Promise
+<
+void
+>
+answerDialog
+(
+answer
+?:
+{ accept
+?:
+boolean
+; text
+?:
+string
+}
+)
+:
+Promise
+<
+void
+>
+dialogs
+()
+:
+Promise
+<
+Dialog
+[]>
+waitForDialog
+(
+options
+?:
+{ type
+?:
+'
+alert
+'
+|
+'
+confirm
+'
+|
+'
+prompt
+'
+; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+Dialog
+>
+route
+/
+waitForRequest
+/
+waitForConsole
+/
+console
+/
+network
+// 同 Acde, 限定在这个窗口
+}
+interface
+RoleOptions {
+name
+?:
+string
+|
+RegExp
+; exact
+?:
+boolean
+checked
+?:
+boolean
+; disabled
+?:
+boolean
+; selected
+?:
+boolean
+expanded
+?:
+boolean
+; pressed
+?:
+boolean
+; focused
+?:
+boolean
+; level
+?:
+number
+}
+AppWindow
+每次使用时重新在窗口表里找, 窗口关了又开也能用.
+info()
+是窗口在这张表里的那一行:
+ref
+、
+id
+、
+app
+、
+title
+、
+state
+(
+normal
+、
+minimized
+、
+filled
+、
+fullscreen
+)、
+focus
+、
+hidden
+等. 窗口最小化期间,
+state
+是
+minimized
+,
+hidden
+是
+true
+, Locator 在里面找不到任何元素:
+toBeHidden()
+通过, 动作则一直等到超时 (
+no element matches
+).
+restore()
+把窗口和它的元素带回来.
+reload()
+等到新页面载入完成;
+resize()
+设页面的尺寸 (不含标题栏), 等到
+innerWidth
+和
+innerHeight
+变成这个尺寸 (铺满屏幕的窗口改的是宿主窗口的大小, Windows 上还做不到);
+seedLocalStorage()
+在页面的脚本运行之前写入这些条目, 办法是把页面重新载入一次.
+class
+Mouse
+{
+move
+(
+x
+:
+number
+,
+y
+:
+number
+,
+options
+?:
+{ steps
+?:
+number
+}
+)
+:
+Promise
+<
+ActResult
+>
+down
+(
+options
+?:
+{ button
+?:
+'
+left
+'
+|
+'
+right
+'
+|
+'
+middle
+'
+}
+)
+:
+Promise
+<
+ActResult
+>
+up
+(
+options
+?:
+{ button
+?:
+'
+left
+'
+|
+'
+right
+'
+|
+'
+middle
+'
+}
+)
+:
+Promise
+<
+ActResult
+>
+click
+(
+x
+:
+number
+,
+y
+:
+number
+,
+options
+?:
+{ button
+?
+; clickCount
+?:
+number
+; modifiers
+?:
+Modifier
+[] }
+)
+:
+Promise
+<
+ActResult
+>
+dblclick
+(
+x
+:
+number
+,
+y
+:
+number
+,
+options
+?:
+{ button
+?
+; modifiers
+?:
+Modifier
+[] }
+)
+:
+Promise
+<
+ActResult
+>
+wheel
+(
+deltaX
+:
+number
+,
+deltaY
+:
+number
+)
+:
+Promise
+<
+ActResult
+>
+}
+class
+Keyboard
+{
+down
+(
+key
+:
+string
+)
+/
+up
+(
+key
+:
+string
+)
+:
+Promise
+<
+ActResult
+>
+press
+(
+keys
+:
+string
+)
+:
+Promise
+<
+ActResult
+>
+// "Enter", "Control+a"
+type
+(
+text
+:
+string
+)
+:
+Promise
+<
+ActResult
+>
+// 按键; 没有对应按键的字符作为文字插入
+insertText
+(
+text
+:
+string
+)
+:
+Promise
+<
+ActResult
+>
+// 像输入法提交文字那样, 没有按键事件
+}
+class
+Clock
+{
+install
+(
+options
+?:
+{ time
+?:
+number
+|
+string
+|
+Date
+}
+)
+:
+Promise
+<
+ClockState
+>
+fastForward
+(
+duration
+:
+number
+|
+string
+)
+/
+runFor
+(
+duration
+:
+number
+|
+string
+)
+:
+Promise
+<
+ClockState
+>
+pauseAt
+(
+time
+)
+/
+setFixedTime
+(
+time
+)
+/
+setSystemTime
+(
+time
+)
+:
+Promise
+<
+ClockState
+>
+resume
+()
+/
+state
+()
+:
+Promise
+<
+ClockState
+>
+}
+type
+Modifier
+=
+'
+Shift
+'
+|
+'
+Control
+'
+|
+'
+Alt
+'
+|
+'
+Meta
+'
+|
+'
+ControlOrMeta
+'
+坐标是页面的 CSS 像素, 就是
+getBoundingClientRect()
+给出的那种.
+ControlOrMeta
+在每个系统上都是
+Control
+. 时刻是 1970 年以来的毫秒数、
+Date
+或日期字符串; 时长是毫秒数、
+"mm:ss"
+或
+"hh:mm:ss"
+.
+ClockState
+是
+{ installed, paused, now, performanceNow, fixed, timers }
+.
+fastForward
+让每个到期的定时器触发一次,
+runFor
+让每个定时器在它自己的时刻触发;
+setFixedTime
+让
+Date
+停住不动而定时器照常走,
+setSystemTime
+只改
+Date
+.
+close()
+等到窗口没了才返回. 只跑一个应用的会话里, 关掉唯一的窗口会结束会话: 这次调用以
+ended: true
+和一段说明这一点的文字 resolve (见
+Acde
+下的
+act
+), 会话不再接受请求. 测试不需要关那个窗口, 因为它的会话随测试结束.
+Locator
+Locator 一节的链接
+class
+Locator
+{
+getByRole
+/
+getByText
+/
+getByLabel
+/
+…
+/
+locator
+(
+...
+)
+// 在这个元素下面找
+filter
+(
+options
+:
+{ hasText
+?:
+string
+|
+RegExp
+; hasNotText
+?:
+string
+|
+RegExp
+; has
+?:
+Locator
+; hasNot
+?:
+Locator
+}
+)
+:
+Locator
+or
+(
+other
+:
+Locator
+)
+/
+and
+(
+other
+:
+Locator
+)
+:
+Locator
+nth
+(
+index
+:
+number
+)
+/
+first
+()
+/
+last
+()
+:
+Locator
+count
+()
+:
+Promise
+<
+number
+>
+all
+()
+:
+Promise
+<
+Locator
+[]>
+isVisible
+()
+:
+Promise
+<
+boolean
+>
+textContent
+()
+:
+Promise
+<
+string
+>
+// 元素里面的文字 (toHaveText 比较的就是它)
+text
+()
+/
+name
+()
+/
+value
+()
+/
+states
+()
+/
+ref
+()
+/
+node
+()
+:
+Promise
+<...>
+waitFor
+(
+options
+?:
+{ state
+?:
+'
+visible
+'
+|
+'
+hidden
+'
+; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+void
+>
+click
+(
+options
+?:
+{ button
+?:
+'
+left
+'
+|
+'
+right
+'
+; clickCount
+?:
+1
+|
+2
+; modifiers
+?:
+Modifier
+[]; timeout
+?:
+number
+}
+)
+:
+Promise
+<
+ActResult
+>
+dblclick
+(
+options
+?:
+{ modifiers
+?:
+Modifier
+[] }
+)
+/
+hover
+(
+options
+?:
+{ modifiers
+?:
+Modifier
+[] }
+)
+:
+Promise
+<
+ActResult
+>
+focus
+()
+/
+clear
+()
+:
+Promise
+<
+ActResult
+>
+evaluate
+<
+T
+>
+(
+fn
+:
+string
+|
+(
+(
+element
+,
+arg
+)
+=>
+T
+),
+arg
+?:
+unknown
+)
+:
+Promise
+<
+T
+>
+fill
+(
+text
+:
+string
+)
+/
+type
+(
+text
+:
+string
+)
+/
+press
+(
+keys
+:
+string
+)
+:
+Promise
+<
+ActResult
+>
+scroll
+(
+dy
+?:
+number
+)
+:
+Promise
+<
+ActResult
+>
+selectOption
+(
+values
+:
+string
+|
+string
+[]
+)
+:
+Promise
+<
+ActResult
+>
+check
+()
+/
+uncheck
+()
+/
+setChecked
+(
+checked
+:
+boolean
+)
+:
+Promise
+<
+void
+>
+dragTo
+(
+target
+:
+Locator
+)
+:
+Promise
+<
+ActResult
+>
+screenshot
+(
+options
+?:
+{ path
+?:
+string
+; mask
+?:
+Locator
+[] }
+)
+:
+Promise
+<
+Shot
+>
+}
+动作失败 (
+ok: false
+) 时重试到超时, 再抛
+ActError
+.
+evaluate
+在页面里用这个元素和
+arg
+(JSON) 调用这个函数, 返回它的 JSON 结果;
+fn
+也可以是这样一个函数的源码.
+语义树的限制
+语义树的限制 一节的链接
+getByRole
+、
+getByText
+和
+getByLabel
+找的是运行时的语义树, 不是 DOM:
+opacity: 0
+的元素不在语义树里, 所以这几个 Locator 找不到它们.
+getByText
+比较的是无障碍名字.
+按 CSS 找的 Locator (
+locator
+、
+getByTestId
+、
+getByPlaceholder
+、
+getByTitle
+、
+getByAltText
+) 找的是 DOM, 也匹配没有渲染出来的元素;
+toBeVisible
+、
+toBeHidden
+、
+isVisible()
+和
+waitFor({ state })
+区分这两种元素, 动作会等到元素渲染出来.
+Png
+Png 一节的链接
+Png.decode(bytes)
+、
+Png.encode(image)
+、
+Png.diff(actual, expected, {threshold})
+: 只用
+node:zlib
+的 PNG 编解码和 pixelmatch 风格的比较, 截图断言用的就是它.
+Png.animate(frames)
+把同一尺寸的几张 PNG (每张是
+{ png, ms }
+) 拼成一张动画 PNG;
+Video.start(acde)
+用它录屏 (
+stop()
+, 再
+write(path)
+),
+acde test --video
+留下的就是这个.
+上一页
+服务接口
+下一页
+Web 兼容性

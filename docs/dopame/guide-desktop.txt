@@ -1,0 +1,920 @@
+桌面 | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+配置
+应用
+窗口
+面板
+标题栏
+通知、下载、快捷键
+批准提示
+系统应用
+其它模块
+在桌面里开发
+本页内容
+概述
+配置
+应用
+窗口
+面板
+标题栏
+通知、下载、快捷键
+批准提示
+系统应用
+其它模块
+在桌面里开发
+桌面
+Dopame OS 的桌面本身也是一个 acde 工程: 一张铺满屏幕、在所有窗口后面的网页. 桌面能导入这个平台上除
+acde:window
+(它是给应用窗口用的) 以外的所有
+acde:
+模块, 包括应用拿不到的 shell 模块, 负责 Dock、菜单栏、窗口切换、通知、批准提示这些「系统界面」. Dopame 自带的桌面叫
+dopame
+; 你可以做自己的.
+终端窗口
+acde
+new
+my-desktop
+--template
+desktop
+cd
+my-desktop
+acde
+dev
+配置
+配置 一节的链接
+{
+"$schema"
+:
+"
+./node_modules/@dopame/acde-api/config.schema.json
+"
+,
+"type"
+:
+"
+desktop
+"
+,
+"id"
+:
+"
+my-desktop
+"
+,
+"label"
+:
+"
+My Desktop
+"
+,
+"entry"
+:
+"
+index.html
+"
+,
+"services"
+: {
+"clock"
+:
+"
+services/clock.ts
+"
+},
+"apps"
+: [
+{
+"id"
+:
+"
+hello
+"
+,
+"label"
+:
+"
+Hello
+"
+,
+"icon"
+:
+"
+app
+"
+,
+"entry"
+:
+"
+apps/hello/index.html
+"
+}
+]
+}
+services
+: 跑在后台的
+服务
+, 名字 → 模块.
+apps
+: 这个桌面自带的应用, 字段和应用工程一样 (
+id
+、
+entry
+必填). 它们是
+系统应用
+.
+桌面工程要让编辑器有类型, 引用 SDK 的 shell 入口:
+/// <reference types="@dopame/acde-api/shell" />
+.
+应用
+应用 一节的链接
+import
+{ apps }
+from
+'
+acde:apps
+'
+for
+(
+const
+app
+of
+await
+apps
+.
+list
+()) {
+const
+button
+=
+document
+.
+createElement
+(
+'
+button
+'
+)
+button
+.
+textContent
+=
+app
+.
+label
+button
+.
+onclick
+=
+()
+=>
+apps
+.
+open
+(
+app
+.
+id
+)
+dock
+.
+append
+(
+button
+)
+}
+apps
+.
+on
+(
+'
+changed
+'
+,
+(
+{
+apps
+}
+)
+=>
+render
+(
+apps
+))
+app.icon
+是图标名或图片 URL, 桌面自己决定怎么画. 在这里跑不了的应用不在列表里: 必需的能力这个平台没有的, 或必需的能力被用户拒绝了的. 列表变了,
+changed
+就带着新的列表触发, 用户拒绝了某个应用必需的能力或收回了对它的批准时也一样.
+应用需要批准时,
+apps.open(id)
+先问用户 (见
+批准提示
+); 应用启动不了时它 reject: 用户拒绝了这个提示时是
+status: 403
+、
+code: 'denied'
+(
+Viewer: "launch" is denied by the user
+), 之后只要这次拒绝还在, 每次都是这样; 应用必需的东西这个平台没有时是
+status: 404
+、
+code: 'unsupported_app'
+(
+Viewer needs "network" (unsupported on this platform)
+). 桌面还能导入
+acde:openPath
+、
+acde:handlers
+和
+acde:setDefault
+(见
+打开应用
+). 安装包、列出原生程序在
+acde:packages
+里 (
+refresh
+、
+install
+、
+natives
+、
+runNative
+).
+窗口
+窗口 一节的链接
+import
+{ windows }
+from
+'
+acde:windows
+'
+windows
+.
+on
+(
+'
+open
+'
+,
+(
+e
+)
+=>
+addToTaskbar
+(
+e
+.
+window
+))
+windows
+.
+on
+(
+'
+close
+'
+,
+(
+e
+)
+=>
+removeFromTaskbar
+(
+e
+.
+window
+))
+windows
+.
+on
+(
+'
+state
+'
+,
+(
+e
+)
+=>
+markMinimized
+(
+e
+.
+window
+,
+e
+.
+state
+===
+'
+minimized
+'
+))
+await
+windows
+.
+focus
+(
+id
+)
+await
+windows
+.
+requestState
+(
+id
+,
+'
+minimized
+'
+)
+await
+windows
+.
+animate
+(
+id
+, { opacity:
+0
+, scale:
+0.9
+, duration:
+180
+, easing:
+'
+ease-out
+'
+})
+窗口事件:
+open
+close
+title
+state
+activate
+minsize
+parent
+menus
+crash
+hang
+responsive
+attention
+ready
+show
+animated
+. 别的名字会抛
+TypeError
+. 每个事件是
+{type: 'window<名字>', window, …}
+.
+窗口的状态是
+normal
+、
+minimized
+、
+filled
+或
+fullscreen
+. 状态的改变由运行时自己执行, 不管是应用请求的 (
+minimize()
+、
+requestState()
+)、用户按了标题栏的按钮, 还是桌面调了
+windows.requestState(id, state)
+; 桌面从
+state
+事件 (
+{window, state, previous}
+) 得知每一次改变.
+windows.list()
+给出每个窗口和它当前的
+state
+. 对最小化的窗口调
+windows.focus(id)
+或
+windows.show(id)
+, 它会按之前的状态回来. 隐藏 (
+hide
+/
+show
+) 和状态是两回事, 只有桌面能做. 卡住的窗口 (
+hang
+) 可以
+kill
+;
+close(id)
+会先问应用 (它的
+beforeclose
+).
+面板
+面板 一节的链接
+Dock、菜单栏、弹出层这类要浮在应用窗口
+上面
+的东西, 用
+pin
+把桌面页面里的一个元素变成单独的置顶窗口:
+import
+{ desktop }
+from
+'
+acde:desktop
+'
+const
+panel
+=
+desktop
+.
+pin
+(
+document
+.
+querySelector
+(
+'
+#dock
+'
+)
+, { margin:
+8
+, reserve: { edge:
+'
+bottom
+'
+} }
+)
+// 元素变了系统会自动重新测量; 也可以手动:
+panel
+.
+update
+()
+panel
+.
+reserve
+({ edge:
+'
+bottom
+'
+, thickness:
+64
+})
+// 或 null, 什么都不保留
+panel
+.
+unpin
+()
+元素还在同一个文档里, 状态、React 树、事件都照常. 元素要是一个 stacking context (比如有
+position
+加
+z-index
+, 或
+isolation: isolate
+); 它的
+backdrop-filter
+会变成真正的窗口间毛玻璃.
+reserve
+在屏幕的一条边 (
+top
+、
+bottom
+、
+left
+、
+right
+) 上保留一条, 不让铺满的窗口占: 工作区相应缩小,
+filled
+的窗口跟着变, 应用在
+acde:window
+的
+output
+里看到新的
+workArea
+. 不给
+thickness
+时, 这一条从屏幕的边一直到面板离这条边远的那一侧. 没有
+reserve
+的面板不占位置.
+标题栏
+标题栏 一节的链接
+每个应用窗口的标题栏由运行时画; 桌面决定它的样子和行为:
+desktop
+.
+setDoubleClick
+(
+'
+fill
+'
+)
+// 双击标题栏: 'fill' | 'minimize' | 'none'
+desktop
+.
+setFrameTheme
+({
+active: { background:
+'
+#202030
+'
+, title:
+'
+#ffffff
+'
+},
+inactive: { background:
+'
+#2a2a35
+'
+, title:
+'
+#a0a0b0
+'
+},
+buttonStyle:
+'
+glyphs
+'
+,
+// 或 'dots'
+buttonSide:
+'
+right
+'
+,
+// 或 'left'
+titleAlign:
+'
+start
+'
+,
+// 或 'center'
+})
+desktop
+.
+setFrameTheme
+(
+null
+)
+// 回到默认的样子
+颜色写
+#rgb
+、
+#rgba
+、
+#rrggbb
+、
+#rrggbbaa
+、
+rgb()
+或
+rgba()
+;
+active
+和
+inactive
+各自可以有
+background
+、
+title
+、
+line
+和
+buttons
+. 每次调用给的都是整套主题. 不认识的值会抛
+TypeError
+.
+通知、下载、快捷键
+通知、下载、快捷键 一节的链接
+desktop
+.
+on
+(
+'
+notification
+'
+,
+(
+n
+)
+=>
+toast
+(
+n
+.
+title
+,
+n
+.
+body
+,
+n
+.
+icon
+))
+desktop
+.
+on
+(
+'
+download
+'
+,
+(
+d
+)
+=>
+showDownload
+(
+d
+.
+name
+,
+d
+.
+path
+))
+await
+windows
+.
+shortcut
+(
+'
+ctrl+alt+t
+'
+,
+'
+desktop
+'
+)
+desktop
+.
+on
+(
+'
+shortcut
+'
+,
+(
+{
+key
+}
+)
+=>
+{
+if
+(
+key
+===
+'
+ctrl+alt+t
+'
+)
+apps
+.
+open
+(
+'
+term
+'
+) })
+快捷键的作用域:
+session
+(最高, 不可覆盖) → 焦点窗口的应用级 →
+desktop
+. 冲突时以先注册的为准.
+批准提示
+批准提示 一节的链接
+有些能力要用户批准之后应用才拿得到 (见
+系统能力
+). 桌面负责显示提示, 并用
+acde:permissions
+把回答传回去:
+import
+{ permissions }
+from
+'
+acde:permissions
+'
+const
+ask
+= async
+(
+prompt
+)
+=> {
+// prompt: { id, app, label, capability, reason: 'launch' | 'request' }
+const
+allow
+= await
+showPrompt
+(
+`
+Allow
+${
+prompt
+.
+label
+}
+to use
+${
+prompt
+.
+capability
+}
+?
+`
+)
+await
+permissions
+.
+answer
+(
+prompt
+.
+id
+,
+allow
+)
+}
+permissions
+.
+on
+(
+'
+prompt
+'
+,
+ask
+)
+for
+(
+const
+prompt
+of
+await
+permissions
+.
+pending
+())
+ask
+(
+prompt
+)
+// 页面订阅之前就发出的提示
+permissions.list(app?)
+返回存下来的决定 (
+{app, label, capability, decision: 'granted' | 'denied'}
+; 用户为应用选的文件夹列成
+fs.folder-…
+, 带
+folder: {label, exists}
+),
+permissions.revoke(app, capability)
+收回一个决定, 本来就没有时 resolve 成
+false
+.
+answered
+事件 (
+{id, app, capability, allowed}
+) 报告每一次回答.
+系统应用
+系统应用 一节的链接
+桌面的
+apps
+里的应用和桌面在同一个包里, 所以是
+系统应用
+. 它们和别的应用有三点不同:
+可以把 shell 模块声明成能力并导入:
+"capabilities": { "windows": true, "permissions": true }
+. 不在桌面包里的应用声明了 shell 模块, 过不了
+acde check
+(
+acde:windows is a shell module: only apps of a desktop package (system apps) may declare it
+).
+它们的能力不用用户批准.
+fs.roots
+里写了共享位置时, 它们的
+acde:fs
+根带着文件夹的
+path
+,
+fs.locate()
+/
+fs.openPath()
+也能用.
+系统应用只能导入它声明了的模块: 没写
+"session": true
+就
+import 'acde:session'
+会失败, 报
+acde:session is a shell module: declare "session" in the capabilities of <label>
+.
+其它模块
+其它模块 一节的链接
+acde:session
+:
+logout()
+、
+reboot()
+、
+poweroff()
+、
+setLanguage(tag)
+.
+acde:desktops
+:
+list()
+、
+choose(id, remember?)
+切换桌面.
+acde:launch
+:
+start(argv)
+起一个原生程序,
+embed(argv)
+把一个原生程序嵌进窗口 (仅 Dopame OS).
+acde:inspect
+: 把屏幕变成文字的语义树, 并按 ref 操作 (给 AI agent 用), 见
+参考
+.
+在桌面里开发
+在桌面里开发 一节的链接
+开发一个应用时, 也可以让它跑在某个桌面里:
+终端窗口
+acde
+dev
+./my-app
+--desktop
+./my-desktop
+acde
+dev
+./my-app
+--desktop
+dopame
+见
+acde dev
+.
+上一页
+打开应用
+下一页
+服务

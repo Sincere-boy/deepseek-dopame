@@ -1,0 +1,565 @@
+窗口 | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+尺寸和标题栏
+acde:window
+窗口状态
+事件
+菜单
+浏览器接口
+模块入口
+内存和卡死
+本页内容
+概述
+尺寸和标题栏
+acde:window
+窗口状态
+事件
+菜单
+浏览器接口
+模块入口
+内存和卡死
+窗口
+每个应用窗口是一张独立的网页, 有自己的 DOM 和 JS 堆; 一个窗口崩溃不影响别的. 同一个应用的所有窗口共享
+localStorage
+、IndexedDB、cookie 等存储.
+尺寸和标题栏
+尺寸和标题栏 一节的链接
+在桌面里, 新窗口的内容区是配置的
+size
+(默认 800 × 600), 居中打开; 下次打开时摆回上次关闭的位置.
+只跑一个应用的
+acde dev
+会话里 (应用工程, 没带
+--desktop
+), 应用
+铺满宿主窗口
+,
+size
+决定宿主窗口打开时有多大: 配置是
+"size": [400, 300]
+时, 宿主窗口的内容区是 400 × 300. 标题栏画在内容区里面, 所以页面是 400 × 268. 没写
+size
+时, 宿主窗口占屏幕的大部分 (宽的 90%、高的 85%, 最大 1440 × 900).
+acde dev --headless
+没有宿主窗口,
+size
+不起作用: 屏幕是 1440 × 900 (
+acde test
+里是 1280 × 800), 应用铺满它, 所以页面是 1440 × 868. 想看应用在按它自己的
+size
+开的窗口里的样子, 让它跑在桌面里:
+acde dev --desktop ./my-desktop
+, 或装了那个桌面之后用
+--desktop dopame
+(见
+acde dev
+).
+系统画的标题栏
+不在页面的文档里
+:
+innerHeight
+、
+100vh
+、
+resize
+事件都只算内容区. 不要标题栏时配置
+"frame": false
+, 自己画, 再用
+setGrabHint
+告诉系统哪里能拖.
+标题取
+document.title
+或
+window.setTitle()
+, 以后设的那个为准 (页面里的
+<title>
+会替换文档载入之前设的标题); 都没有时用
+label
+.
+acde:window
+acde:window 一节的链接
+import
+{
+window
+as
+self }
+from
+'
+acde:window
+'
+self
+.
+setTitle
+(
+'
+未命名 — 笔记
+'
+)
+self
+.
+on
+(
+'
+beforeclose
+'
+,
+async
+()
+=>
+{
+if
+(
+!
+dirty
+)
+return
+true
+return
+confirmDiscard
+()
+// 返回 false 留住窗口
+})
+模块名
+window
+和全局的
+window
+同名, 导入时改个名字更清楚.
+成员
+作用
+id
+这个窗口的 id (一个数字)
+setTitle(title)
+标题
+setMenus(menus)
+应用菜单 (桌面的菜单栏显示它)
+close()
+立刻关闭窗口; 不问
+beforeclose
+minimize()
+最小化窗口, 和
+requestState('minimized')
+一样; 窗口不能最小化时 promise reject,
+status: 409
+、
+code: 'unavailable'
+state
+/
+requestState(state)
+窗口的状态:
+normal
+、
+minimized
+、
+filled
+(铺满工作区)、
+fullscreen
+, 见
+窗口状态
+requestMode(mode)
+用户能不能移动窗口和改它的大小:
+free
+(都能)、
+fixed
+(只能移动)、
+pinned
+(都不能)
+output
+窗口所在的屏幕:
+{width, height, scale, workArea: {x, y, width, height}}
+, 逻辑像素;
+workArea
+不含桌面的面板保留的部分. 在只跑一个应用的会话里, 屏幕就是宿主窗口:
+"size": [400, 300]
+时,
+output
+和它的
+workArea
+都是 400 × 300
+requestAttention()
+请求注意 (比如 Dock 图标跳动, 由桌面决定)
+requestActivate()
+提到最前并请求焦点; 系统可能把它变成一次请求注意
+setGrabHint(rect, edges?)
+按在这块区域时系统开始移动窗口 (不给
+edges
+) 或改大小 (给边)
+setBackdrop(rect, effect?)
+这块区域下面的内容做毛玻璃:
+{radius, blur, saturate, brightness}
+;
+null
+取消
+requestGrab(kind)
+/
+releaseGrab(kind)
+独占指针或键盘 (
+'pointer'
+/
+'keyboard'
+)
+shortcut(combo)
+/
+unshortcut(combo)
+注册应用级全局快捷键, 如
+'ctrl+shift+k'
+hostControls
+宿主系统画了窗口的最小化 / 最大化 / 关闭按钮时是
+true
+, 这时没有标题栏的应用该藏起自己画的按钮
+minimizable
+这个窗口不能最小化时是
+false
+. 只跑一个应用的会话, 在 macOS 上和 headless 时, 应用的窗口就是这样的窗口: 它铺满宿主窗口
+窗口状态
+窗口状态 一节的链接
+全屏是窗口的一种
+状态
+, 不是模式:
+requestMode('fullscreen')
+会抛
+TypeError
+(
+requestMode: full screen is a window state, use requestState('fullscreen')
+).
+self
+.
+on
+(
+'
+state
+'
+,
+(
+{
+state
+,
+previous
+}
+)
+=>
+{
+document
+.
+body
+.
+dataset
+.
+windowState
+=
+state
+})
+self
+.
+requestState
+(
+'
+fullscreen
+'
+)
+// 'normal' | 'minimized' | 'filled' | 'fullscreen'
+requestState()
+没有返回值. 由系统决定: 它不答应时什么都不变, 也没有事件.
+fixed
+的窗口只能最小化,
+pinned
+的窗口不能改状态.
+minimizable
+是
+false
+的窗口不能最小化:
+requestState('minimized')
+什么都不变,
+minimize()
+则 reject.
+页面没请求时状态也会变: 标题栏的按钮、桌面把窗口最小化、用户把最小化的窗口拿回来. 界面要跟着
+state
+事件 (或
+self.state
+) 走, 不要跟着页面上一次请求的状态走.
+最小化的窗口重新得到焦点时, 回到它之前的状态 (比如
+fullscreen
+).
+只跑一个应用的
+acde dev
+会话里, 应用本来就铺满宿主窗口, 请求状态可能什么都不变 (macOS 上的 headless 会话里,
+minimized
+、
+filled
+和
+fullscreen
+都让状态留在
+normal
+, 也没有事件). 要试各种状态, 用跑着桌面的会话.
+不支持标准的 Fullscreen API (
+element.requestFullscreen()
+); 它 reject
+NotSupportedError
+.
+事件
+事件 一节的链接
+on(name, handler)
+订阅, 返回退订函数. 模块没有的名字会抛
+TypeError
+(
+acde:window has no nosuch event (activate, deactivate, beforeclose, request, suspend, resume, grab, grablost, state, output, hostcontrols, minimizable, shortcut)
+). 事件不派发到全局
+window
+上.
+事件
+什么时候
+activate
+/
+deactivate
+窗口得到 / 失去焦点
+state
+窗口的状态变了,
+{state, previous}
+output
+屏幕或它的工作区变了; 处理函数收到新的
+output
+beforeclose
+用户或桌面要关窗口. 返回
+false
+(或 resolve 成
+false
+) 留住它; 3 秒不答就关
+request
+别的应用或系统要这个窗口打开东西 (见
+打开应用
+)
+shortcut
+注册的快捷键被按下,
+{key}
+grab
+/
+grablost
+独占的请求有了答复,
+{kind, granted}
+/ 独占被收回,
+{kind: 'lost', reason}
+hostcontrols
+/
+minimizable
+hostControls
+/
+minimizable
+变了; 处理函数收到新的值
+菜单
+菜单 一节的链接
+self
+.
+setMenus
+([
+{
+id:
+'
+file
+'
+,
+label:
+'
+文件
+'
+,
+items: [
+{ id:
+'
+new
+'
+, label:
+'
+新建
+'
+, shortcut:
+'
+ctrl+n
+'
+,
+onSelect
+:
+()
+=>
+newDoc
+() },
+{ type:
+'
+separator
+'
+},
+{ id:
+'
+close
+'
+, label:
+'
+关闭
+'
+,
+onSelect
+:
+()
+=>
+self
+.
+close
+() },
+],
+},
+])
+浏览器接口
+浏览器接口 一节的链接
+接口
+在 acde 里
+window.close()
+关闭这个窗口
+location.reload()
+重新载入这个窗口
+alert()
+画在窗口里;
+confirm()
+/
+prompt()
+返回
+false
+/
+null
+外部链接
+交给浏览器应用
+下载
+存进下载文件夹
+Notification
+交给桌面显示 (没有桌面时发系统通知)
+visibilitychange
+窗口隐藏 / 显示
+screen.*
+屏幕的逻辑尺寸
+模块入口
+模块入口 一节的链接
+entry
+也可以是一个模块, 默认导出
+WindowApp
+:
+import
+type
+{ WindowApp }
+from
+'
+@dopame/acde-api
+'
+const
+app
+:
+WindowApp
+= {
+mount
+(
+element
+,
+host
+)
+{
+host
+.
+setTitle
+(
+'
+Hello
+'
+)
+element
+.
+textContent
+=
+'
+Hello from a module
+'
+return
+()
+=> {
+element
+.
+textContent
+=
+''
+}
+// 卸载
+},
+}
+export
+default
+app
+内存和卡死
+内存和卡死 一节的链接
+每个窗口的 JS 堆有上限 (
+heapMb
+, 默认 256 MB). 超过只结束这一个窗口.
+一个任务跑超过 5 秒, 桌面会收到「无响应」, 可以结束它.
+上一页
+系统能力
+下一页
+文件与文件夹

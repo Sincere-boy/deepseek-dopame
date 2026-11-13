@@ -1,0 +1,263 @@
+acde dev | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+跑什么
+重新载入
+产物
+结束
+日志
+运行时
+本页内容
+概述
+跑什么
+重新载入
+产物
+结束
+日志
+运行时
+acde dev
+终端窗口
+acde
+dev
+做的事:
+构建工程 (到
+.acde/
+);
+启动 acdert, 由它在你的电脑上开
+一个
+窗口:
+宿主窗口
+, 相当于一台 Dopame OS 机器的屏幕;
+盯着工程的文件, 改了就重新构建、重新载入受影响的窗口.
+一个跑着的
+acde dev
+就是一个
+开发会话
+:
+调试命令
+、
+MCP
+和
+acde test
+都要连上一个开发会话才能工作.
+跑什么
+跑什么 一节的链接
+命令
+跑出来的
+acde dev
+(应用工程)
+只有这个应用, 窗口铺满宿主窗口; 关掉应用就结束
+acde dev
+(桌面工程)
+这个桌面
+acde dev --app ID
+工程里有多个应用时挑一个
+acde dev ./a ./b
+几个工程一起, 跑在一个桌面里
+acde dev ./app --desktop ./my-desktop
+应用跑在指定的桌面工程里
+acde dev ./app --desktop dopame
+应用跑在
+dopame
+桌面里 (要先
+装上它
+)
+几个工程或给了
+--desktop
+时, 用哪个桌面:
+--desktop
+的值; 否则这些工程里唯一的桌面工程; 否则
+dopame
+.
+--desktop
+的值像路径 (含
+/
+, 或是
+.
+/
+..
+), 或当前目录下有同名工程时, 当作又一个工程.
+在工程目录里运行的
+acde webs
+列出应用的页面时, 会话就绪了. 应用必需一个要用户批准的能力时 (
+fs.roots
+里点名的共享文件夹、
+terminal
+、
+network
+……), 在它的提示得到回答之前不开窗口:
+acde dev
+打出一行, 像
+Notes (notes) waits for the user to allow "fs.downloads" (prompt 1; answer it with acde allow or acde deny, …)
+, 然后等着,
+acde webs
+不列出页面, 并指出在等的是什么. 在另一个终端里用
+acde allow
+或
+acde deny
+回答, 见
+批准
+.
+--headless
+不开窗口 (这样的会话叫
+headless 会话
+), 适合脚本和 CI; 页面照常渲染, 截图照常能拍. 它仍然需要 GPU, 所以没有 GPU 的 Linux CI 机器上跑不了 (macOS 的 CI runner 可以), 见
+平台支持
+.
+重新载入
+重新载入 一节的链接
+改了文件, 150 ms 内的改动合并成一次构建, 只重建改到的那个工程.
+应用: 关掉它的窗口, 按原来的位置和尺寸重新打开 (配置的
+size
+变了按新的). 桌面: 重载桌面页面, 服务不重启.
+重载时保留状态: 表单的值、滚动位置、焦点和选区会尽量放回去.
+构建失败只打一行错误, 窗口保持上一次的样子.
+node_modules
+、
+.acde
+、
+.git
+、
+dist
+/
+build
+/
+.next
+等框架的输出目录、
+*.e2e.*
+测试文件、
+__screenshots__
+里的变化不触发构建.
+产物
+产物 一节的链接
+默认构建到工程的
+.acde/
+.
+--out DIR
+改位置: 绝对路径直接用, 相对路径相对
+被构建的工程
+. 开发会话的构建只经
+ACDE_PATH
+交给 acdert,
+不会
+装进本机的包目录.
+结束
+结束 一节的链接
+Ctrl+C、关掉窗口, 或 acdert 退出,
+acde dev
+都会结束, 退出码跟 acdert 一致. 要结束一个在后台跑的
+acde dev
+, 在工程目录里运行
+acde stop
+(或
+acde stop --session <pid>
+): 它让 acdert 退出, 等
+acde dev
+退出, 再打出
+acde: stopped acde dev <pid>
+.
+日志
+日志 一节的链接
+终端里能看到: 构建和重载、页面的
+console.*
+和未捕获的错误 (
+[<应用>#<窗口>] page error: …
+)、后端的输出 (
+[<应用>#backend]
+).
+想在另一个终端里看、或者让脚本读, 用
+调试工具
+的
+acde console
+/
+acde network
+.
+运行时
+运行时 一节的链接
+acde dev
+跑
+ACDERT
+指的 acdert (一个路径, 或 PATH 上的名字), 没设就用安装脚本装在 acde 旁边的 acdert, 再没有就用 PATH 上的
+acdert
+.
+acde --version
+显示它找到的是哪个,
+acde doctor
+检查它在这台机器上能不能跑; 见
+运行时
+和
+检查环境
+.
+acdert 在会话就绪之前就退出时 (比如用不了 GPU),
+acde dev
+先打出它的那行日志, 再打
+acde: acdert exited (1) before it was ready; acde doctor checks the runtime, the GPU and this setup
+, 并以同一个退出码退出.
+上一页
+服务
+下一页
+检查环境

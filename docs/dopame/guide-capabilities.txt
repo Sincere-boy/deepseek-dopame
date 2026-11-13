@@ -1,0 +1,675 @@
+系统能力 | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+申请能力
+批准
+可选能力
+acde:capabilities
+类型
+在浏览器里
+模块一览
+本页内容
+概述
+申请能力
+批准
+可选能力
+acde:capabilities
+类型
+在浏览器里
+模块一览
+系统能力
+页面里只有标准的 Web 接口. 系统能力只有一个入口:
+acde:
+内置模块, 写法和
+node:fs
+一样:
+import
+{ fs }
+from
+'
+acde:fs
+'
+import
+{ window }
+from
+'
+acde:window
+'
+import
+fs2
+from
+'
+acde:fs
+'
+// 默认导出也是同一个对象
+没有
+acde
+全局变量, 运行时也不往
+window
+上挂任何非标准的东西.
+访问别的主机不需要申请能力:
+fetch
+、
+WebSocket
+等标准接口照常可用, 系统设了代理时经系统代理. 见
+Web 兼容性
+.
+申请能力
+申请能力 一节的链接
+应用能导入哪些模块, 由配置的
+capabilities
+决定:
+{
+"capabilities"
+: {
+"fs"
+:
+true
+,
+"openFiles"
+:
+true
+,
+"open"
+: [
+"
+notes
+"
+,
+"
+viewer
+"
+]
+}
+}
+能力
+给什么
+要用户批准
+fs
+acde:fs
+.
+true
+: 应用的私有文件夹和用户为它选的文件夹.
+{ "roots": ["downloads", … ] }
+再加上共享位置, 见
+文件与文件夹
+每个共享位置, 即
+fs.<位置>
+terminal
+acde:terminal
+: 伪终端
+是
+network
+acde:network
+: 网络设置, Wi-Fi (仅 Linux, 包括 Dopame OS)
+是
+office
+acde:office
+: 办公文档服务 (仅 Linux)
+open
+用
+acde:open
+打开别的应用.
+true
+是任意应用, 或应用 id 的列表
+openFiles
+acde:openPath
+/
+acde:handlers
+, 以及不指定目标应用的
+open(request)
+: 文件或链接交给它的默认应用
+launch
+acde:launch
+的
+start
+: 起原生程序
+是
+slots
+acde:launch
+的
+embed
+: 嵌在自己窗口里的原生程序 (仅 Dopame OS)
+是
+camera
+/
+microphone
+navigator.mediaDevices.getUserMedia()
+的视频 / 音频 (Windows 上没有)
+是
+这些模块每个应用不用申请就能导入:
+acde:window
+(自己的窗口)、
+acde:capabilities
+(自己有哪些能力, 见
+下文
+)、
+acde:apps
+(
+list()
+和
+open()
+)、
+acde:open
+(打开别的应用仍然要有
+open
+).
+表里没有的名字,
+acde check
+会报错:
+桌面服务
+写在
+services
+里, 不写在
+capabilities
+里:
+"services": ["clock"]
+, 然后
+import { clock } from 'acde:clock'
+. 这样应用只在跑着这个服务的桌面里启动. 见
+服务
+.
+shell 模块
+(
+acde:windows
+、
+acde:packages
+、
+acde:session
+、
+acde:desktops
+、
+acde:inspect
+、
+acde:desktop
+、
+acde:setDefault
+、
+acde:permissions
+) 属于桌面. 只有桌面页面、它的服务和桌面自带的应用 (系统应用) 拿得到, 见
+桌面
+.
+导入应用无权使用的模块会失败, 抛出的
+TypeError
+里指出缺的是哪项声明;
+acde check
+和
+acde build
+在运行之前就对源码里的每个
+import
+报告同样的问题:
+error: app "notes": capability "clock" is not a system capability; list desktop services under services
+error: src/main.js:1: app "notes": acde:terminal needs "terminal" in the capabilities of Notes
+error: src/main.js:2: app "notes": acde:windows is a shell module: only the desktop, its services and system apps may import it, and Notes is not a system app
+调用应用无权使用的方法会被拒绝,
+status: 403
+(
+code: 'forbidden'
+), 比如
+open
+里只列了别的应用时调
+open('mail')
+.
+批准
+批准 一节的链接
+有些能力除了声明, 还要用户同意:
+terminal
+、
+network
+、
+launch
+、
+slots
+、
+camera
+、
+microphone
+, 以及
+fs.roots
+里列的每个共享位置 (
+fs.downloads
+、
+fs.documents
+……). 桌面自带的应用 (系统应用) 不用问.
+什么时候问
+: 必需的能力在应用第一次启动前问, 每个能力一个提示, 一次一个. 每个提示都得到回答之前, 应用
+不开窗口
+. 没有任何东西会自动回答提示. (
+可选
+的能力在页面请求它时才问.)
+在开发会话里
+:
+acde dev
+会打出一行, 像
+Notes (notes) waits for the user to allow "terminal" (prompt 1; answer it with acde allow or acde deny, …)
+,
+acde webs
+里也没有这个应用的页面. 用
+acde allow
+或
+acde deny
+回答, 见
+调试工具
+. 在桌面里, 由桌面显示提示 (见
+桌面
+); 测试用
+acde.allow()
+回答 (见
+端到端测试
+).
+允许
+: 决定按应用存下来 (
+$XDG_CONFIG_HOME/acde/permissions.json
+), 不会再问用户.
+拒绝
+: 应用不启动. 只跑一个应用的
+acde dev
+会在日志里打出
+acdert app notes: Notes: "terminal" is denied by the user; acdert app asks for it again the next time it runs
+, 以退出码 1 退出; 下次对这个应用跑
+acde dev
+时再问 (
+Notes (notes) was denied "terminal" in an earlier run: asking again
+). 在桌面里, 拒绝和批准一样会存下来: 应用从应用列表里消失 (
+acde:apps
+触发
+changed
+),
+apps.open()
+reject,
+status: 403
+、
+code: 'denied'
+, 消息是
+Notes: "terminal" is denied by the user
+, 引出提示的那次调用和之后的每一次都是这样.
+收回决定
+:
+acde revoke <app> <capability>
+(或桌面通过
+acde:permissions
+) 删掉这个决定, 不管它是批准还是拒绝. 在正在跑的会话里, 这个能力从此算作被拒绝: 对它的调用失败,
+status: 403
+、
+code: 'denied'
+, 错误的
+capability
+是它的名字. 必需这个能力的应用从应用列表里消失, 不能打开, 也不能重新加载: 在桌面里, 重新加载会关掉它的窗口; 只跑这一个应用的会话在它下一次重新加载时结束, 日志里打出拒绝时的那一行. 运行时下次启动时会再问用户.
+可选能力
+可选能力 一节的链接
+capabilities
+里的每一项默认都是必需的: 平台没有其中一项, 或用户拒绝了其中一项, 应用就不启动. 应用没有也能跑的那些, 列在
+optional
+里:
+{
+"capabilities"
+: {
+"terminal"
+:
+true
+},
+"optional"
+: [
+"
+terminal
+"
+]
+}
+应用启动时不问用户, 在没有这个能力的平台上也能启动.
+可选的模块不能静态导入 (
+acde check
+:
+acde:terminal is optional ("terminal" is in optional): reach it with load('terminal') from @dopame/acde-api instead of importing it
+). 用
+load()
+取, 模块拿不到时它 resolve 成
+null
+.
+要批准的能力, 在页面调
+acde:capabilities
+的
+request(name)
+时问用户. 在那之前它的状态是
+not-asked
+, 提示在等的时候是
+asking
+; 用户回答之后
+request()
+resolve 成这个能力的状态. 只有用户允许了 (
+state: 'available'
+), 从这时起
+load()
+才返回模块; 用户拒绝了的话, 状态是
+denied
+,
+load()
+仍然 resolve 成
+null
+.
+load()
+给出
+null
+时不带原因. 动态的
+import('acde:terminal')
+则 reject
+TypeError
+, 消息说明批准到了哪一步:
+acde:terminal: "terminal" is not asked for yet; ask for it with acde:capabilities request("terminal")
+、
+acde:terminal: "terminal" is waiting for the user's answer
+或
+acde:terminal: "terminal" is denied by the user
+.
+camera
+和
+microphone
+没有可加载的模块: 页面调
+navigator.mediaDevices.getUserMedia()
+, 这个能力还没问过时由它自己引出提示. 见
+Web 兼容性
+.
+import
+{ load }
+from
+'
+@dopame/acde-api
+'
+import
+{ capabilities }
+from
+'
+acde:capabilities
+'
+let
+terminal
+= await
+load
+(
+'
+terminal
+'
+)
+// 用户允许之前是 null
+if
+(
+!
+terminal
+) {
+const
+status
+= await
+capabilities
+.
+request
+(
+'
+terminal
+'
+)
+// 问用户
+if
+(
+status
+.
+state
+===
+'
+available
+'
+)
+terminal
+=
+await
+load
+(
+'
+terminal
+'
+)
+}
+把
+fs
+设成可选, 它的共享位置也就成了可选的:
+load('fs')
+马上能用, 带着私有文件夹;
+request('fs.downloads')
+问用户要一个位置.
+acde:capabilities
+acde:capabilities 一节的链接
+import
+{ capabilities }
+from
+'
+acde:capabilities
+'
+capabilities
+.
+level
+// 1: 运行时的契约级别
+capabilities
+.
+platform
+// 'linux' | 'darwin' | 'win32'
+capabilities
+.
+mode
+// 'session' (Dopame OS) | 'desktop' (宿主窗口里的桌面) | 'standalone' (宿主窗口里的单个应用)
+capabilities
+.
+get
+(
+'
+terminal
+'
+)
+// { name, kind: 'system' | 'service', state, reason, optional }
+capabilities
+.
+list
+()
+// 同上, 每个系统能力和应用列出的每个服务各一项
+await
+capabilities
+.
+request
+(
+'
+terminal
+'
+)
+// 需要时问用户; resolve 成状态
+state
+含义
+available
+声明了, 这个平台也有, 要批准的话用户也已经允许
+not-asked
+要批准, 而还没问过用户:
+request()
+会问
+asking
+批准提示在等用户回答
+not-declared
+不在应用的
+capabilities
+/
+services
+里
+unsupported
+这个平台或这种运行方式没有它
+service-not-running
+桌面服务没在跑
+shell-only
+是 shell 模块, 而应用不是系统应用
+denied
+用户拒绝了它, 或收回了批准
+对不需要批准的能力, 或用户已经回答过的能力调
+request()
+, 马上 resolve 成当前的状态.
+类型
+类型 一节的链接
+所有模块的类型在 SDK
+@dopame/acde-api
+里, 引用适合工程的那个入口, 编辑器就认识它能导入的
+acde:*
+模块:
+///
+<
+reference
+types
+=
+"
+@dopame/acde-api/app
+"
+/>
+@dopame/acde-api/app
+: 应用的模块 (
+acde:fs
+、
+acde:window
+、
+acde:open
+……).
+@dopame/acde-api/shell
+: 上面这些再加 shell 模块, 给桌面和它自带的应用用.
+@dopame/acde-api
+: 全部.
+在浏览器里
+在浏览器里 一节的链接
+同一份代码要在普通浏览器里预览时:
+Vite 工程加
+@dopame/acde-api/vite
+插件, 开发服务器里
+acde:*
+是桩, 见
+前端框架
+.
+或者用
+load()
+按需加载, 拿不到时是
+null
+:
+import
+{ load }
+from
+'
+@dopame/acde-api
+'
+const
+fs
+= await
+load
+(
+'
+fs
+'
+)
+模块一览
+模块一览 一节的链接
+模块
+用途
+文档
+acde:window
+自己的窗口: 标题、菜单、关闭、状态、快捷键、事件
+窗口
+acde:capabilities
+应用有哪些能力、请求可选能力
+上文
+acde:fs
+文件
+文件与文件夹
+acde:apps
+acde:open
+acde:openPath
+acde:handlers
+别的应用、打开文件和链接
+打开应用
+acde:launch
+原生程序
+参考
+acde:terminal
+伪终端
+参考
+acde:network
+网络
+参考
+acde:windows
+acde:packages
+acde:desktop
+acde:inspect
+acde:permissions
+acde:session
+acde:desktops
+acde:setDefault
+shell 模块: 桌面和系统应用
+桌面
+完整签名见
+参考: acde: 模块
+.
+上一页
+后端
+下一页
+窗口

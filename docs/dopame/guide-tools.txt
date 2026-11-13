@@ -1,0 +1,1312 @@
+调试工具 | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+选会话
+命令
+eval
+inspect 和 act
+query
+console 和 network
+批准
+出错
+本页内容
+概述
+选会话
+命令
+eval
+inspect 和 act
+query
+console 和 network
+批准
+出错
+调试工具
+acdert 里没有浏览器的开发者工具. 代替它的是一组命令, 连到正在跑的
+acde dev
+开发会话上, 能看页面、执行代码、截图、点按钮. 在另一个终端里运行:
+终端窗口
+acde
+webs
+NAME           KIND     APP    WINDOW   TITLE
+desktop        desktop  -      0        My Desktop
+notes#1048576  app      notes  1048576  Notes
+选会话
+选会话 一节的链接
+这些命令找开发会话的顺序:
+--session <pid>
+; 否则工程目录包含当前目录的那个; 否则只有一个时用它; 否则报错并列出所有会话.
+命令
+命令 一节的链接
+命令
+作用
+acde webs
+列出正在跑的页面 (每个窗口一张)
+acde eval <web> <代码>
+在页面里执行代码, 打印 JSON 结果; Promise 会等它完成. 代码写
+-
+时从 stdin 读
+acde shot <web> [-o FILE]
+一个窗口的截图 (PNG)
+acde screen [-o FILE]
+整个屏幕的截图, 所有窗口合在一起
+acde inspect [--window W] [--find TEXT] [--all] [--offscreen]
+把屏幕变成文字: 窗口列表和焦点窗口的元素树 (
+--all
+: 所有没有标
+[minimized]
+的窗口, 以及被
+opacity: 0
+或
+visibility
+隐藏的元素)
+acde query <选择器> [--window W] [--ref REF] [--limit N]
+用 CSS 选择器找元素, 包括
+inspect
+不列的那些, 给每个打出一个 ref
+acde act <ref> <动作> [参数]
+按
+inspect
+或
+query
+给的 ref 点击、输入、按键……
+acde console [--web W] [--level L] [--since S] [--follow]
+页面的
+console.*
+和未捕获的错误
+acde network [--web W] [--failed] [--since S] [--follow]
+页面的 fetch / XHR / WebSocket / EventSource 请求, 以及页面载入的图片、样式表和字体; kind 一列说明是哪一种
+acde permissions
+列出等待回答的批准提示和已做的决定, 见
+批准
+acde allow
+/
+acde deny
+[<提示 id> | <应用> <能力>] [--all]
+回答一个等待中的批准提示
+acde revoke <应用> <能力>
+收回一个决定
+acde stop
+结束会话, 见
+结束
+一个
+web
+就是一张页面: 桌面页, 或一个应用窗口里的页面 (每个窗口一张).
+<web>
+可以是
+acde webs
+列出的 web 名 (
+notes#1048576
+)、应用 id (那个应用的第一个窗口) 或
+desktop
+.
+eval
+eval 一节的链接
+终端窗口
+acde
+eval
+notes
+'
+document.title
+'
+acde
+eval
+notes
+'
+import("acde:fs").then(m => m.fs.roots())
+'
+echo
+'
+localStorage.length
+'
+|
+acde
+eval
+notes
+-
+Windows 上
+acde
+是
+acde.exe
+, 它把参数原样交给命令行工具, shell 传来什么就是什么. 各种 shell 传来的不一样:
+PowerShell 7: 单引号括起来的参数里的双引号原样到达 (
+acde eval notes 'document.querySelector("#x").textContent'
+).
+Windows PowerShell 5.1 给任何程序传参数时都会丢掉参数里的双引号; 在那里把它们写成
+\"
+(下面的第一行).
+cmd 没有单引号字符串: 把参数放进双引号里, 里面的双引号写成
+\"
+(下面的第二行).
+终端窗口
+acde eval notes
+'
+document.querySelector(\"#x\").textContent
+'
+# Windows PowerShell 5.1 only
+终端窗口
+acde eval notes
+"
+document.querySelector(\
+"
+#x\
+"
+).textContent
+"
+代码里只有单引号时, 三种 shell 里写法都一样; 从 stdin 传代码则不用管这个问题 (下面是 PowerShell 的写法):
+终端窗口
+acde eval notes
+"
+document.querySelector('#x').textContent
+"
+'
+document.querySelector("#x").textContent
+'
+|
+acde eval notes
+-
+任何带双引号的参数都是这样, 比如
+act ... type
+.
+bin\acde.cmd
+仍然装在
+acde.exe
+旁边作为后备 (
+acde.cmd …
+), 但 PowerShell 给
+.cmd
+传参数时会丢掉其中的双引号.
+inspect 和 act
+inspect 和 act 一节的链接
+inspect
+给每个元素一个
+ref
+(元素编号), 比如
+w1.18
+(窗口
+w1
+里的第 18 号元素); 把它交给
+act
+.
+终端窗口
+$
+acde
+inspect
+-
+window
+"
+Notes
+"
+[app=notes] [focused] [fullscreen] [w1]
+-
+heading
+"
+Notes
+"
+[level=1] [w1.16]
+-
+form
+[w1.6]
+-
+text
+"
+Title
+"
+[w1.17]
+-
+textbox
+"
+Title
+"
+:
+""
+[w1.18]
+-
+text
+"
+Email
+"
+[w1.19]
+-
+textbox
+"
+Email
+"
+:
+""
+[w1.20]
+-
+button
+"
+Save
+"
+[w1.21]
+-
+list
+"
+Saved notes
+"
+[w1.7]
+-
+listitem
+[w1.22]
+-
+text
+"
+Buy milk
+"
+[w1.22]
+-
+text
+"
+1 note
+"
+[w1.8]
+(
+1
+more
+outside
+the
+visible
+area
+;
+scroll,
+or
+add
+offscreen
+)
+$
+acde
+act
+w1.18
+type
+"
+Weekly report
+"
+typed,
+the
+value
+is
+now
+"
+Weekly report
+"
+(
+windows
+unchanged
+)
+-
+window
+"
+Notes
+"
+[app=notes] [focused] [fullscreen] [w1]
+~
+-
+textbox
+"
+Title
+"
+:
+"
+Weekly report
+"
+[focused] [w1.18]
+(
+1
+more
+outside
+the
+visible
+area
+;
+scroll,
+or
+add
+offscreen
+)
+$
+acde
+act
+w1.21
+click
+clicked
+55,202
+(
+windows
+unchanged
+)
+-
+window
+"
+Notes
+"
+[app=notes] [focused] [fullscreen] [w1]
+~
+-
+textbox
+"
+Title
+"
+:
+""
+[w1.18]
+~
+-
+button
+"
+Save
+"
+[focused] [w1.21]
++
+-
+listitem
+[w1.23]
++
+-
+text
+"
+Weekly report
+"
+[w1.23]
+~
+-
+text
+"
+2 notes
+"
+[w1.8]
+(
+1
+more
+outside
+the
+visible
+area
+;
+scroll,
+or
+add
+offscreen
+)
+不带
+--find
+时, 这段文字总是这种英文格式: 每个窗口一行, 最上层的在前 (
+- window "Notes" [app=notes] [focused] [w1]
+, 桌面是
+- desktop
+), 列出内容的窗口下面是它的元素, 每层缩进两个空格, 写成
+- role "name": "value" [states] [ref]
+(值只在元素有值时才有). 括号里的说明讲的是哪些被略去、哪些没有变, 比如
+(empty)
+、
+(no changes)
+和
+(windows unchanged)
+.
+act
+在第一行打出它做了什么 (
+clicked 55,202
+是它点的那个点, 用窗口坐标), 等页面安静下来, 再把窗口和那个窗口的内容打一遍. 那个窗口它之前列过的话, 只打出此后变了的:
+~
+是变了的一行,
++
+是新的一行,
+-
+是没了的一行;
+(windows unchanged)
+表示窗口列表没变. 所以做下一步之前, 通常只读
+act
+的输出就够了. 滚出视野的元素会先被滚进视野, 所以
+inspect --offscreen
+或
+query
+给的 ref, 不管元素在页面的哪里都能用.
+动作做成了,
+act
+的退出码是 0. 没做成时, 只打一行原因, 退出码 1:
+the element is not displayed
+(它是
+display: none
+, 或被
+visibility
+隐藏)、
+covered by another element: <div> (27)
+、
+cannot type into this element
+、
+element 23 is gone
+(见下文)、
+w1 is minimized; act restore on it first
+(对最小化的窗口或它里面的元素做点击或别的指针动作).
+只要元素还在, 它的 ref 就不变: 移动它、改它的文字或属性、重排列表, ref 都不变. 页面用一个新元素换掉它时 (比如设
+innerHTML
+), 新元素得到新的 ref, 对旧 ref 做动作会失败, 报
+element N is gone
+; 这时重新
+inspect
+一次.
+默认情况下, 树里不列看不见的元素:
+display: none
+、
+aria-hidden
+、
+inert
+、
+opacity: 0
+和
+visibility
+隐藏的.
+--all
+列出窗口列表里所有没有标
+[minimized]
+的窗口, 并保留被
+opacity: 0
+隐藏的元素 (标
+transparent
+; 它们仍然点得到) 和被
+visibility
+隐藏的元素 (标
+invisible
+; 它们点不到);
+display: none
+、
+aria-hidden
+和
+inert
+的总是不列.
+不在屏幕上的窗口在窗口列表里标
+[minimized]
+: 状态是
+minimized
+的窗口 (
+act w1 minimize
+、应用自己的
+minimize()
+或桌面的
+windows.requestState(id, 'minimized')
+之后), 以及桌面用
+windows.hide(id)
+藏起来的窗口. 它的元素不列出来:
+--all
+和
+--find
+跳过它,
+--window w1
+在它那一行下面打出
+(empty)
+和
+(minimized; act restore on it to see its elements)
+. 对它的指针动作 (
+click
+、
+double
+、
+right
+、
+hover
+、
+scroll
+, 以及从它拖出或拖到它上面的
+drag
+) 会被拒绝,
+act w1 restore
+把它拿回来. 在跑桌面的会话里:
+终端窗口
+$
+acde
+act
+w1
+minimize
+w1
+is
+minimized
+(the
+windows
+changed
+)
+-
+window
+"
+Tools
+"
+[app=tools] [minimized] [w1]
+-
+desktop
+[focused] [fullscreen] [w0]
+-
+navigation
+"
+Apps
+"
+[w0.6]
+-
+button
+"
+Tools
+"
+[w0.10]
+$
+acde
+act
+w1.10
+click
+w1
+is
+minimized
+;
+act
+restore
+on
+it
+first
+$
+acde
+act
+w1
+restore
+w1
+is
+in
+front
+(the
+windows
+changed
+)
+-
+window
+"
+Tools
+"
+[app=tools] [focused] [w1]
++
+-
+heading
+"
+Tools
+"
+[level=1] [w1.10]
+-
+desktop
+[fullscreen] [w0]
+--find TEXT
+在每个没有标
+[minimized]
+的窗口里找 (或只在
+--window W
+里), 只打出名字或值包含这段文字的元素 (不分大小写). 它的输出有自己的格式: 每个有匹配的窗口一行
+<window ref> <app id> "<title>":
+(桌面是
+w0 desktop:
+), 下面每个元素一行. 元素在有名字的祖先里面时, 后面跟着
+in
+和离它最近的这样一个祖先; 没有这样的祖先时, 后面什么都不跟:
+终端窗口
+$
+acde
+inspect
+--find
+milk
+w1
+notes
+"
+Notes
+"
+:
+-
+text
+"
+Buy milk
+"
+[w1.22]  in list
+"
+Saved notes
+"
+[w1.7]
+$
+acde
+inspect
+--find
+save
+w1
+notes
+"
+Notes
+"
+:
+-
+button
+"
+Save
+"
+[w1.21]
+-
+list
+"
+Saved notes
+"
+[w1.7]
+什么都没匹配到时, 它在 stderr 上说明, 退出码 1. 滚出视野的元素要加
+--offscreen
+才找得到; 不加时, 树下面有一条说明, 写着略去了多少个 (
+(1 more outside the visible area; scroll, or add offscreen)
+).
+动作:
+click
+double
+right
+hover
+scroll
+type
+settext
+select
+key
+drag
+focus
+; 窗口 ref (
+w1
+) 还能
+close
+minimize
+restore
+. 对不能最小化的窗口做
+minimize
+什么都不变, 它会说明原因, 退出码 1; 只跑一个应用的会话里, 在 macOS 上和 headless 时, 应用自己的窗口就是这样:
+w1 cannot be minimized: it fills the host window, which only the host window's own controls minimize here
+.
+key
+的参数像
+"ctrl+a backspace"
+;
+drag
+的参数是目标 ref. 关掉一个窗口使 acdert 结束时 (
+acde dev
+只跑一个应用时的应用窗口),
+acde dev
+也跟着结束; 这时
+act w1 close
+会说明这一点, 退出码 0.
+键名
+键名 一节的链接
+key
+的参数 (以及测试里的
+press()
+) 是用空格隔开的一个或多个组合键; 一个组合键是用
++
+连起来的几个键, 按顺序按下, 按相反的顺序松开. 键指的是美式键盘布局上的物理键. 不分大小写, 只是单个大写字母 (
+A
+) 会加上
+shift
+:
+修饰键:
+ctrl
+(
+control
+)、
+shift
+、
+alt
+、
+super
+(
+meta
+、
+win
+)
+字母
+a
+…
+z
+, 数字
+0
+…
+9
+,
+f1
+…
+f12
+enter
+(
+return
+)、
+escape
+(
+esc
+)、
+tab
+、
+space
+、
+backspace
+、
+delete
+(
+del
+)、
+insert
+、
+home
+、
+end
+、
+pageup
+、
+pagedown
+、
+up
+、
+down
+、
+left
+、
+right
+、
+menu
+可打印的字符照原样写:
+-
+=
+[
+]
+;
+'
+`
+\
+,
+.
+/
+, 以及要按 shift 才打得出的
+!
+@
+#
+$
+%
+^
+&
+*
+(
+)
+_
++
+{
+}
+|
+:
+"
+<
+>
+?
+~
+, 它们自己会加上
+shift
+(
+*
+就是
+shift+8
+).
++
+单独出现, 或在组合键的最后时 (
+ctrl++
+), 是
++
+键
+一些字符的名字:
+plus
+(
++
+)、
+multiply
+、
+asterisk
+、
+star
+(
+*
+)、
+minus
+(
+-
+)、
+divide
+(
+/
+)、
+period
+(
+.
+)、
+comma
+(
+,
+); 它们是主键盘上的键, 不是小键盘上的
+小键盘:
+Numpad0
+…
+Numpad9
+、
+NumpadAdd
+、
+NumpadSubtract
+、
+NumpadMultiply
+、
+NumpadDivide
+、
+NumpadDecimal
+、
+NumpadEnter
+其他键用 DOM 的
+KeyboardEvent.code
+名, 比如
+KeyA
+、
+Digit8
+、
+Minus
+、
+ArrowUp
+、
+CapsLock
+、
+ShiftRight
+整个参数在按下任何键之前先检查: 有不认识的键就失败, 报
+unknown key: …
+, 什么都不按. 空格这个字符写
+space
+(空格用来隔开组合键). 要输入文字, 改用
+type
+.
+query
+query 一节的链接
+inspect
+列出用户看得到、用得了的东西.
+query
+用 CSS 选择器找元素, 不管它们显示没显示, 并给每个一个 ref, 所以它够得到
+inspect
+不列的东西:
+display: none
+的元素, 滚出视野的元素, 以及自己没有角色、名字或值的元素 (一个普通的
+<div>
+;
+inspect
+把它里面的东西列在它的位置上).
+终端窗口
+$
+acde
+query
+'
+form input[type=email]
+'
+1
+in
+w1:
+-
+textbox
+"
+Email
+"
+:
+""
+[w1.20] <input>
+$
+acde
+query
+'
+[data-testid="menu"] li
+'
+2
+in
+w1:
+-
+generic
+"
+Rename
+"
+[w1.25] <li> [hidden]
+-
+generic
+"
+Delete
+"
+[w1.26] <li> [hidden]
+$
+acde
+query
+button
+4
+in
+w1:
+-
+button
+"
+Save
+"
+[focused] [w1.21] <button>
+-
+button
+"
+Undo
+"
+[transparent] [w1.10] <button> [hidden]
+-
+button
+[invisible] [w1.24] <button> [hidden]
+-
+button
+"
+Load more
+"
+[w1.11] <button>
+$
+acde
+query
+nav
+nothing
+in
+w1
+matches
+"
+nav
+"
+每一行是元素的角色、名字、值、标题的级别、状态和 ref, 和
+inspect
+打出的完全一样 (
+- heading "Notes" [level=1] [w1.16] <h1>
+), 然后是它的标签. 标签后面的
+[hidden]
+标出看不见的元素: 它没有尺寸, 或者是
+display: none
+、被
+visibility
+隐藏, 或者透明, 或者它的窗口最小化了.
+transparent
+和
+invisible
+这两个标记就是
+inspect --all
+给的那两个: 透明的元素仍然接得到点击, 对用户来说也是这样;
+invisible
+或
+display: none
+的元素, 在页面把它显示出来之前,
+act
+都回
+the element is not displayed
+. 判断不出角色的元素列成
+generic
+; 标签说明它是什么.
+这些 ref 和
+inspect
+给的一样, 可以交给
+act
+:
+acde act w1.20 type "me@example.com"
+.
+query
+在焦点窗口里找;
+--window w2
+换一个窗口,
+--ref w1.6
+只在那个元素下面找,
+--limit N
+最多列出 N 个元素 (1 到 3000, 默认 600; 第一行数的仍然是全部). 什么都没找到不算错误: 两种情况退出码都是 0.
+console 和 network
+console 和 network 一节的链接
+终端窗口
+acde
+console
+--level
+errors
+--follow
+acde
+network
+--failed
+--level
+是
+log
+info
+warn
+error
+debug
+, 或
+errors
+(
+console.error
+加未捕获的错误).
+--follow
+持续输出新的.
+页面里的
+fetch
+以
+TypeError: Failed to fetch
+reject 时,
+acde network --failed
+里那个请求的一行会说明原因 (CORS 规则、解析不了的名字、被拒绝的连接):
+终端窗口
+$
+acde
+network
+--failed
+1
+GET
+ERR
+https://nonexistent.invalid/
+(fetch
+158
+ms
+;
+Failed
+to
+connect
+to
+host:
+Failed
+resolving
+hostname:
+failed
+to
+lookup
+address
+information:
+nodename
+nor
+servname
+provided,
+or
+not
+known
+) notes#1048576
+页面重载后条目还留着, 所以改动之前的错误仍然会列出来. 第一列是条目的编号.
+--since reload
+只列
+acde dev
+最近一次重建并重载之后的条目 (还没重载过就是全部);
+--since N
+列第
+N
+条和之后的. 页面自己做的重载 (
+location.reload()
+) 不算.
+终端窗口
+acde
+console
+--level
+errors
+--since
+reload
+每种最多留最近 5000 条.
+批准
+批准 一节的链接
+应用必需一个要用户批准的能力时 (
+terminal
+、
+network
+、
+camera
+、
+microphone
+、
+launch
+、
+slots
+, 或
+fs.roots
+里点名的共享文件夹, 比如
+fs.downloads
+), 在提示得到回答之前它不开窗口, 也没有什么会自动回答这个提示 (Windows 上宿主窗口用一个对话框问; macOS、Linux 上和 headless 会话里没有对话框).
+acde dev
+打出运行时的那行
+Notes (notes) waits for the user to allow "fs.downloads" (prompt 1; answer it with acde allow or acde deny, …)
+,
+acde webs
+不列出页面, 并说明应用在等什么. 用
+acde allow
+或
+acde deny
+回答:
+终端窗口
+$
+acde
+webs
+NAME
+KIND
+APP
+WINDOW
+TITLE
+notes
+waits
+for
+approval
+of
+fs.downloads:
+acde
+allow
+(or
+acde
+deny
+)
+$
+acde
+permissions
+pending:
+1
+notes
+fs.downloads
+(launch)
+decisions:
+none
+$
+acde
+allow
+allowed
+notes
+fs.downloads
+(prompt
+1
+)
+$
+acde
+webs
+NAME
+KIND
+APP
+WINDOW
+TITLE
+notes#1048576
+app
+notes
+1048576
+Notes
+不带参数时,
+acde allow
+和
+acde deny
+回答唯一在等的那个提示. 有几个在等时, 它们一个都不回答, 把它们列出来; 用 id 指定一个 (
+acde allow 2
+), 或用应用和能力指定 (
+acde allow notes fs.downloads
+), 或用
+--all
+全部回答. 在跑桌面的会话里,
+acde webs
+总会列出桌面的页面, 所以那里要看
+acde permissions
+: 应用的提示在应用第一次被打开时提出.
+决定按应用保存 (在
+$XDG_CONFIG_HOME/acde/permissions.json
+里), 所以批准过的不会再问, 这个会话里和以后都不会. 批准是用户的决定: 替别人运行这些命令时, 只允许他们要求过或同意过的, 并告诉他们你允许了什么.
+终端窗口
+$
+acde
+permissions
+pending:
+none
+decisions:
+notes
+fs.downloads
+granted
+$
+acde
+revoke
+notes
+fs.downloads
+revoked
+notes
+fs.downloads
+acde revoke <应用> <能力>
+去掉一个决定. 这次运行余下的时间里这个能力算作被拒绝 (对它的调用 reject,
+code: 'denied'
+), 下次运行会再问. 只跑一个应用的会话里, 失去了必需能力的应用不能再启动: 下一次重载会结束会话, 打出一行
+acdert app notes: Notes: "fs.downloads" is denied by the user; acdert app asks for it again the next time it runs
+, 退出码 1, 下一次
+acde dev
+会问.
+拒绝了应用必需的能力, 应用就不启动. 只跑一个应用的会话里,
+acde dev
+这时在日志里打出
+acdert app notes: Notes: "fs.downloads" is denied by the user; acdert app asks for it again the next time it runs
+, 以退出码 1 退出; 下一次对这个应用
+acde dev
+会再问 (
+Notes (notes) was denied "fs.downloads" in an earlier run: asking again
+), 所以一次拒绝不会把你挡在自己的应用外面. 在桌面里, 拒绝一直有效, 直到被收回: 应用从应用列表里消失, 打开它会以
+status: 403
+、
+code: 'denied'
+reject (见
+桌面
+). 哪些能力需要批准, 应用怎么把一个能力设成可选, 见
+系统能力
+.
+出错
+出错 一节的链接
+命令失败时打
+acde: <原因>
+, 退出码 1. 会话已经退出时会说
+acde dev <pid> is gone
+.
+上一页
+检查环境
+下一页
+编码 agent

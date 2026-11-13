@@ -1,0 +1,456 @@
+包清单 | Dopame 开发者文档
+跳转到内容
+Dopame 开发者文档
+搜索
+Ctrl
+K
+取消
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+菜单
+概览
+开始
+安装
+第一个应用
+工程结构
+指南
+配置工程
+前端框架
+静态资源与图标
+后端
+系统能力
+窗口
+文件与文件夹
+打开应用
+桌面
+服务
+acde dev
+检查环境
+调试工具
+编码 agent
+MCP
+端到端测试
+本机安装
+参考
+命令行
+acde.config.jsonc
+包清单
+acde: 模块
+服务接口
+测试 API
+Web 兼容性
+环境变量
+平台支持
+dopame.ai
+选择主题
+深色
+浅色
+自动
+深色
+浅色
+自动
+选择语言
+简体中文
+English
+简体中文
+本页内容
+概述
+PackageManifest
+契约级别
+DesktopManifest
+AppManifest
+Capabilities
+地址
+本页内容
+概述
+PackageManifest
+契约级别
+DesktopManifest
+AppManifest
+Capabilities
+地址
+包清单
+运行时只认
+包
+: 一个目录,
+package.json
+的
+acde
+字段是清单.
+acde build
+从配置生成它; 你也可以手写.
+{
+"name"
+:
+"
+my-pkg
+"
+,
+"acde"
+: {
+"apiLevel"
+:
+1
+,
+"desktops"
+: [{
+"id"
+:
+"
+dopame
+"
+,
+"name"
+:
+"
+Dopame
+"
+,
+"entry"
+:
+"
+desktop/index.html
+"
+,
+"services"
+: [
+"
+assistant
+"
+] }],
+"apps"
+: [{
+"id"
+:
+"
+term
+"
+,
+"label"
+:
+"
+终端
+"
+,
+"icon"
+:
+"
+term
+"
+,
+"entry"
+:
+"
+/app/term/index.html
+"
+,
+"capabilities"
+: {
+"terminal"
+:
+true
+} }],
+"assets"
+: {
+"/app/term/"
+: [
+"
+apps/term/web
+"
+],
+"/desktop/dopame/"
+: [
+"
+desktop
+"
+] },
+"services"
+: [{
+"name"
+:
+"
+assistant
+"
+,
+"module"
+:
+"
+services/assistant.js
+"
+}]
+}
+}
+清单的校验只有一份, 运行时和
+acde check
+/
+acde build
+用的是同一段代码 (
+@dopame/acde-api/manifest
+).
+acde check <dir>
+检查手写的包.
+PackageManifest
+PackageManifest 一节的链接
+字段
+说明
+apiLevel
+包是按哪个契约级别构建的, 正整数; 必填. 见
+契约级别
+desktops
+桌面列表
+apps
+应用列表. 在带桌面的包里, 它们是系统应用
+assets
+同源 URL 前缀 (
+/…/
+) → 包里的目录列表
+services
+{name, module}
+: 服务名和模块文件. 名字不能是系统模块或能力的名字
+契约级别
+契约级别 一节的链接
+apiLevel
+说明包遵循的是包和运行时之间哪一版契约. 现在的级别是 1 (
+@dopame/acde-api
+里的
+API_LEVEL
+;
+acde --version
+和
+acdert --version
+会打印各自的). 运行时只载入和自己同一级别的包:
+包
+运行时和
+acde check
+怎么说
+没有
+apiLevel
+(在有契约级别之前构建的)
+no acde.apiLevel: a package built before contract levels; rebuild it with the current acde (level 1)
+别的级别
+acde.apiLevel 2: needs level 2, runtime is level 1
+被运行时拒绝的包不在应用列表里, 也不在桌面列表里. 用现在的
+acde
+重新构建它.
+DesktopManifest
+DesktopManifest 一节的链接
+字段
+说明
+id
+/
+name
+/
+description
+entry
+桌面页面: 包里一个 HTML 文件的路径 (
+desktop/index.html
+), 不是 URL
+services
+用到的服务: 一个名字, 或
+{name, modules}
+, 其中
+modules
+列出这个服务可以从
+ctx.import()
+拿到的 shell 模块 (见
+服务接口
+)
+heapMb
+默认 1024, 最小 32
+AppManifest
+AppManifest 一节的链接
+字段
+说明
+id
+[\w-]+
+, 必填. 运行时认这个规则; 配置只允许
+[a-z0-9][a-z0-9-]*
+(见
+acde.config.jsonc
+), 所以宽松的规则只对手写的包有意义
+label
+必填
+icon
+图标名, 或 assets 下以
+.svg
+/
+.png
+结尾的 URL, 必填
+entry
+以
+/
+开头的 URL, 必填. HTML 或模块; 以
+/
+结尾表示页面由后端渲染 (要有
+backend
+)
+capabilities
+系统能力, 见下
+optional
+capabilities
+里的名字中, 应用没有也能跑的那些
+services
+应用用到的桌面服务的名字
+heapMb
+默认 256, 最小 32
+size
+[宽, 高]
+, 默认 800 × 600
+multiple
+默认
+false
+frame
+默认
+true
+mimeTypes
+应用能打开的文件类型:
+type/subtype
+或
+type/*
+schemes
+应用能打开的链接的 URL scheme: 小写, 不带冒号, 不能是
+file
+requests
+应用从别的应用接受的请求种类: 小写的词, 不能是
+open-file
+或
+open-link
+backend
+{entry, port?}
+:
+entry
+是 assets 下的
+.js
+/
+.mjs
+URL,
+port
+默认 3000
+Capabilities
+Capabilities 一节的链接
+键
+值
+给什么
+要用户批准
+fs
+true
+|
+{roots: string[]}
+acde:fs
+: 私有文件夹和选中的文件夹;
+roots
+写共享位置 (
+desktop
+、
+documents
+、
+downloads
+、
+music
+、
+pictures
+、
+videos
+)
+roots
+里的每个位置
+terminal
+true
+acde:terminal
+是
+network
+true
+acde:network
+是
+office
+true
+acde:office
+launch
+true
+acde:launch
+的
+start
+是
+slots
+true
+acde:launch
+的
+embed
+: 嵌在应用窗口里的原生程序
+是
+open
+true
+|
+string[]
+用
+acde:open
+打开 (这些) 应用
+openFiles
+true
+acde:openPath
+、
+acde:handlers
+, 以及不带目标应用的
+open(request)
+camera
+/
+microphone
+true
+getUserMedia()
+的视频 / 音频
+是
+windows
+packages
+session
+desktops
+inspect
+desktop
+setDefault
+permissions
+true
+同名的 shell 模块. 只给系统应用: 写在别的包里是错误
+别的键都是错误: 桌面服务写在
+services
+里. 系统应用从不需要用户批准.
+capabilities
+和
+services
+里的每一项都是必需的, 除非
+optional
+列了它 (
+optional
+只收
+capabilities
+里的名字). 有必需项在这里缺失 (平台不支持、用户拒绝、服务没在跑) 的应用不在应用列表里, 也拒绝启动, 比如报
+Notes needs "network" (unsupported on this platform)
+; 被拒绝时是另一句话,
+Notes: "terminal" is denied by the user
+(见
+系统能力
+).
+地址
+地址 一节的链接
+页面的源是
+http://acde.local
+.
+应用的文件在
+/app/<id>/
+, 也挂在
+/
+下; 桌面在
+/desktop/<id>/
+.
+上一页
+acde.config.jsonc
+下一页
+acde: 模块
