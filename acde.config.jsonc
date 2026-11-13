@@ -4,7 +4,8 @@
   "label": "DeepSeek Harness",
   "icon": "chat",
   "framework": "script",
-  "size": [1280, 840],
+  "size": [1120, 600],
+  "frame": true,
   "heapMb": 1024,
   "backend": { "entry": "server.mjs", "port": 3000 }
 }
