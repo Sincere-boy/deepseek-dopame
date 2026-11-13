@@ -12,9 +12,19 @@
 
 ## 实施与验收
 
-1. 固定上游源码和平台文档。
+1. 固定上游源码；按需查阅官网原始文档，不保存丢失格式的纯文本副本。
 2. 打包完整运行时，接入私有后端和页面入口。
 3. 验证真实渲染、认证信任、动态插件及流式通信。
 4. 实测模型、会话恢复、工作区、文件和 shell 工具，记录兼容性。
 
 完成要求：acde check/build 通过；acde dev 运行并截图验证完整 UI；真实模型对话成功；重启后会话可恢复；工具逐项记录实测结果，未验证项不能宣称完成。
+
+## 官方依据
+
+- [后端](https://docs.dopame.ai/zh/guide/backend/)：后端打包、私有 socket、环境与生命周期。
+- [Web 兼容性](https://docs.dopame.ai/zh/reference/web/)：模块、网络、存储与浏览器 API。
+- [框架适配](https://docs.dopame.ai/zh/guide/frameworks/)：构建输出与静态资源。
+- [应用配置](https://docs.dopame.ai/zh/guide/config/)：窗口、能力与后端声明。
+- [调试工具](https://docs.dopame.ai/zh/guide/tools/)：实际运行、页面检查与截图。
+
+以上链接是查阅入口；实现细节需结合官网当前页面核对。

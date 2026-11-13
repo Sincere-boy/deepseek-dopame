@@ -4,4 +4,4 @@
 
 上游源码固定于 `c291e7961a515f6d7af9304e7fd1d257929aef26`，位于 `vendor/harness`，保留 MIT 授权。适配代码与上游分离。
 
-官方中文文档已递归获取 30 个页面，来源见 `docs/dopame/sources.json`。
+平台文档以 [Dopame 官方中文文档](https://docs.dopame.ai/zh/) 为准。开发时按需查阅原始页面，保留代码块、表格和链接的上下文，不维护纯文本副本。
