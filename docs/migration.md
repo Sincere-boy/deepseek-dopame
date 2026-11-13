@@ -38,7 +38,7 @@
 - 已接入 WebSocket 升级转发；Host/Origin 保留 acdert 后端实际请求值，认证 cookie 按该 authority 签发。未关闭上游同源或认证校验。
 - 连接恢复后 `acde console --level errors` 无错误，界面不再显示重连提示；仍需实际模型与工具验证。
 - 平台适配保存在上游目录之外；用户数据使用应用的 `ACDE_APP_DATA/harness`，不向源码或产物写入密钥。真实验证通过凭据 API 将已有 `DEEPSEEK_API_KEY` 保存到应用私有数据，未导入旧会话或浏览器签名密钥。
-- 原始 Harness 服务的可运行结论不能证明迁移完成；后续仍需在 acdert 内验证真实对话、持久化及工具。
+- 原始 Harness 服务的可运行结论不作为迁移证明；本轮已在 acdert 内独立完成真实对话、持久化及 Standard 27 项工具验证。
 
 ## 已完成的端到端验证
 

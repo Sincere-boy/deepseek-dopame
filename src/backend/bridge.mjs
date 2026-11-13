@@ -1,9 +1,9 @@
 import { createServer, request } from 'node:http'
 import { connect } from 'node:net'
-import WebSocket, { WebSocketServer } from 'ws'
 
 // Carry the Harness protocol without changing authority-bound authentication.
-export function createHarnessBridge({ socketPath, ready, launchToken, reportRejection = () => {} }) {
+export function createHarnessBridge({ socketPath, ready, launchToken, websocket, reportRejection = () => {} }) {
+  const { default: WebSocket, WebSocketServer } = websocket
   const cookies = new Map()
   const options = (path, headers = {}) => ({ socketPath, path,
     headers: { ...headers, host: headers.host ?? 'acde.local', 'accept-encoding': 'identity' } })
@@ -51,8 +51,8 @@ export function createHarnessBridge({ socketPath, ready, launchToken, reportReje
   server.on('upgrade', (req, socket, head) => {
     const cookie = cookies.get(req.headers.host ?? 'acde.local')
     if (!cookie) { socket.destroy(); return }
-    // Each hop owns RFC 6455 control frames. In acdert 0.0.9 a raw tunnel
-    // fails the upstream's Ping/Pong deadline after several idle minutes.
+    // Each hop owns RFC 6455 control frames, so Harness heartbeats are
+    // answered independently of the page's rendering loop.
     const remote = new WebSocket(`ws://${req.headers.host ?? 'acde.local'}${req.url}`, {
       createConnection: () => connect(socketPath), perMessageDeflate: false,
       headers: { cookie, ...req.headers.origin && { origin: req.headers.origin } },

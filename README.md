@@ -19,6 +19,6 @@ acde dev
 
 `prepare:harness` 构建上游并打包运行时；日常 `acde build/dev` 只构建应用。上游变化后重新运行 `prepare:harness`，仅打包规则变化时可运行 `npm run prepare:runtime`。
 
-应用使用独立数据目录。密钥通过设置页保存，源码和构建产物不携带密钥。当前仍在迁移验证中；完整功能尚未验收。
+应用使用独立数据目录。密钥通过设置页保存，源码和构建产物不携带密钥。本机 macOS acdert 与 Dopame 桌面运行、重启恢复及 Standard 默认 27 项工具调用均已验证通过；Linux 实机尚未测试。
 
 验证范围、已通过功能与待验证路径见 [运行验证](docs/validation.md)。`npm test` 运行通信适配层回归测试。

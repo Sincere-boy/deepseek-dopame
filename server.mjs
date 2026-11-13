@@ -1,5 +1,6 @@
 import { createHarnessBridge } from './src/backend/bridge.mjs'
 import { StringDecoder } from 'node:string_decoder'
+import { pathToFileURL } from 'node:url'
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -10,6 +11,11 @@ const data = process.env.ACDE_APP_DATA
 if (!data) throw new Error('This backend must run inside acde')
 mkdirSync(data, { recursive: true })
 if (!existsSync(join(runtime, 'node_modules/@deepseek-ai/dsh/lib/bin.js'))) throw new Error('Packaged Harness runtime missing')
+// Use the deployed Node package: JS bundlers turn ws's optional native
+// accelerators into stubs that fail on larger masked frames.
+process.env.WS_NO_BUFFER_UTIL = '1'
+process.env.WS_NO_UTF_8_VALIDATE = '1'
+const websocket = await import(/* @vite-ignore */ pathToFileURL(join(runtime, 'node_modules/ws/wrapper.mjs')).href)
 
 let token
 const { promise: ready, resolve: markReady, reject: markFailed } = Promise.withResolvers()
@@ -59,6 +65,6 @@ for (const signal of ['SIGTERM', 'SIGINT']) {
   })
 }
 createHarnessBridge({
-  socketPath: join(process.env.ACDE_APP_SOCKETS, '3080.sock'), ready, launchToken: () => token,
+  socketPath: join(process.env.ACDE_APP_SOCKETS, '3080.sock'), ready, launchToken: () => token, websocket,
   reportRejection: facts => console.error('Harness trust rejection', JSON.stringify(facts)),
 }).listen(3000)

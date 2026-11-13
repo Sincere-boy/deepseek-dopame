@@ -11,7 +11,8 @@ import { createHarnessBridge } from '../src/backend/bridge.mjs'
 async function fixture(t, handler, ready = Promise.resolve()) {
   const dir = await mkdtemp('/tmp/dshb-')
   const upstream = createServer(handler)
-  const bridge = createHarnessBridge({ socketPath: join(dir, 'up.sock'), ready, launchToken: () => 'test-token' })
+  const bridge = createHarnessBridge({ socketPath: join(dir, 'up.sock'), ready, launchToken: () => 'test-token',
+    websocket: { default: WebSocket, WebSocketServer } })
   const sockets = new Set()
   for (const server of [upstream, bridge]) {
     server.on('connection', socket => {
@@ -86,7 +87,7 @@ test('streams the first chunk before the upstream response finishes', { timeout:
 
 test('preserves binary messages and answers upstream heartbeats independently', { timeout: 3000 }, async t => {
   const { upstream, path, call } = await fixture(t, auth)
-  const bytes = Buffer.from([0, 1, 2, 255])
+  const bytes = Buffer.alloc(2048, 255)
   const pong = Promise.withResolvers()
   const wsServer = new WebSocketServer({ server: upstream })
   t.after(() => { for (const ws of wsServer.clients) ws.terminate(); wsServer.close() })
