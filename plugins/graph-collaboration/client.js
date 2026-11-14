@@ -13,6 +13,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
   .gc button.primary{background:#315ee8;color:#fff;border-color:#315ee8}
   .gc header{padding:20px 24px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .gc header,.gc .toolbar,.gc .tabs{position:relative;z-index:2;flex-shrink:0;background:var(--dsw-alias-bg-base,#fff)}
+  .gc header button,.gc .toolbar button,.gc .toolbar select,.gc .tabs button{position:relative;z-index:3}
   .gc h2{font-size:20px;margin:0}
   .gc small{color:#718096}
   .gc .toolbar{display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid #e9edf3;flex-wrap:wrap}
