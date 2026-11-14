@@ -26,14 +26,15 @@ test('a delayed opening snapshot cannot interrupt work started after observer in
   ending.resolve(); await observer.settled()
   assert.equal(store.get(room.id).run.activeNode, 'review')
 })
-test('cold persisted accepted work with no surviving executor still pauses for human recovery', async t => {
+test('a cold snapshot without an executor cannot alone invalidate an accepted execution', async t => {
   const { store, room } = fixture(t)
   const execution = store.start(room.id, { task: '进程中断后的遗留执行', commandId: 'start' }).run.execution
   store.accepted(execution.id)
   const controller = { async *follow() { yield { type: 'snapshot', records: [user(execution)] } } }
   const observer = createSessionObserver({ store, controller, agents: new Map(), signal: new AbortController().signal, dispatch() {} })
   observer.observe(execution.sessionId, room.id, 'develop'); await observer.settled()
-  assert.equal(store.get(room.id).run.status, 'needs_attention')
+  assert.equal(store.get(room.id).run.status, 'running')
+  assert.doesNotThrow(() => store.report(execution.sessionId, { executionId: execution.id, outcome: 'ready', summary: '仍可接受本次有效结果' }))
 })
 test('a surviving executor is not interrupted when a plugin observes its history again', async t => {
   const { store, room } = fixture(t)

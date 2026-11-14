@@ -1,6 +1,7 @@
 window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(require) {
   const { createElement: h, useEffect, useRef, useState } = require('react')
   const statusText = { waiting: '等待前序', queued: '待执行', running: '执行中', finishing: '正在收尾', completed: '已完成', needs_attention: '需要处理', waiting_human: '等待人工', cancelling: '正在取消', cancelled: '已取消' }
+  const liveText = { running: '执行中', queued: '排队', background: '后台任务', idle: '空闲', missing: '会话缺失', unknown: '状态未知' }
   const css = `
   .gc{height:100%;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#172033);font:14px system-ui}
   .gc *{box-sizing:border-box}
@@ -40,7 +41,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
   .gc .meta{font-size:12px;color:#718096}
   `
   const endpoint = '/api/graph-collaboration'
-  function WorkflowGraph({ nodes, run, events, selected, onSelect }) {
+  function WorkflowGraph({ nodes, run, events, states = {}, selected, onSelect }) {
     const width = 360, nodeWidth = 170, nodeHeight = 60, center = 166
     const positions = new Map(nodes.map((node, index) => [node.id, { x: center - nodeWidth / 2, y: 30 + index * 118, index }]))
     const endY = 30 + nodes.length * 118
@@ -67,7 +68,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
         arrow = `M ${to.x} ${y} L ${to.x - 8} ${y - 4} L ${to.x - 8} ${y + 4} Z`
         labelX = lane + 8; labelY = (from.y + to.y) / 2 + 25
       }
-      const label = ({ ready: '提交评审', pass: '通过', reject: '退回修改', fail: '测试失败' })[outcome] || outcome
+      const label = ({ ready: target === null ? '完成' : '交给' + nodes.find(n => n.id === target)?.label, pass: '通过', reject: '退回修改', fail: '未通过' })[outcome] || outcome
       return h('g', { key: node.id + ':' + outcome, 'aria-label': `${node.label} ${label} ${nodes.find(n => n.id === target)?.label || '完成'}` },
         h('path', { d: path, fill: 'none', stroke: color, strokeWidth: active ? 2.5 : 1.5 }), h('path', { d: arrow, fill: color }),
         h('text', { x: labelX, y: labelY, fill: color, fontSize: 11, textAnchor: backwards ? 'middle' : 'end' }, label))
@@ -82,7 +83,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
         const position = positions.get(node.id), state = run?.nodeStates[node.id] || 'waiting', color = colors[state] || ['#ffffff', '#bdc7d8']
         return h('button', { key: node.id, type: 'button', 'aria-label': '节点 ' + node.label, 'aria-pressed': selected === node.id, onClick: () => onSelect(node.id),
           style: { position: 'absolute', left: position.x / width * 100 + '%', top: position.y / height * 100 + '%', width: nodeWidth / width * 100 + '%', height: nodeHeight / height * 100 + '%', padding: 0, background: color[0], border: `1.5px solid ${color[1]}`, borderRadius: 12, boxShadow: selected === node.id ? '0 0 0 3px #b8caff' : 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 } },
-          h('strong', { style: { color: '#243552', fontSize: 14 } }, node.label), h('span', { style: { color: color[1], fontSize: 11 } }, statusText[state]))
+          h('strong', { style: { color: '#243552', fontSize: 14 } }, node.label), h('span', { style: { color: color[1], fontSize: 11 } }, statusText[state] + ' · ' + (liveText[states[node.id]?.status] || '状态未知')))
       }))
   }
   async function command(args) {
@@ -144,6 +145,8 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
         if (await act('create', { name: name.trim(), cwd: cwd.trim(), graph: config })) setCreate(false)
       }
       const room = data.room?.id === selected ? data.room : null, run = room?.run, nodes = room?.graph.nodes || [], node = nodes.find(n => n.id === nodeId) || nodes.find(n => n.id === run?.activeNode) || nodes[0]
+      const liveStates = Object.fromEntries(nodes.map(n => [n.id, data.sessionStates?.[room.sessions[n.id]]]))
+      const nodeLive = liveStates[node?.id], stalled = run?.status === 'running' && liveStates[run.activeNode]?.health === 'stalled'
       const runEvents = data.events.slice(data.events.findLastIndex(e => e.kind === 'run.started') + 1)
       const nodeReport = runEvents.findLast(e => ['node.reported', 'node.human_requested'].includes(e.kind) && e.data.nodeId === node?.id)
       const labels = { user: '你', organizer: '组织者', ...Object.fromEntries(nodes.map(n => [n.id, n.label])) }
@@ -166,6 +169,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
             button('重新加载', () => setRevision(n => n + 1)),
             loadStatus === 'loading' && h('span', { className: 'meta', role: 'status' }, '正在加载…'),
             room && h('span', { className: 'meta' }, !room.ready ? '会话待初始化' : run ? statusText[run.status] : '尚未开始任务'),
+            stalled && h('span', { className: 'error', role: 'status' }, '当前角色已持续空闲 5 分钟，尚未推进流程，请查看会话后处理。'),
             room && !room.ready && button('重试初始化', () => act('provision')),
             run && ['running', 'waiting_human', 'needs_attention'].includes(run.status) && button('取消任务', () => act('cancel'))),
           !room ? h('div', { className: 'empty', role: 'status' }, loadStatus === 'loading' ? '正在加载已有工作区…' : loadStatus === 'failed' ? '工作区暂时无法加载，请点击“重新加载”重试。' : data.rooms.length ? '请选择已有工作区。' : '暂无协作工作区。点击“新建工作区”，为各个节点绑定独立会话。') : h('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
@@ -177,10 +181,11 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
                 h('div', { className: 'compose' }, h('textarea', { 'aria-label': '协作消息', placeholder: run?.status === 'waiting_human' ? '输入人工处理意见…' : '向组织者描述需求或询问进展…', value: draft, onChange: e => setDraft(e.target.value) }),
                   h('div', { className: 'actions' }, button('发送给组织者', async () => { if (await act('chat', { text: draft })) setDraft('') }, { disabled: busy || !draft.trim() || !room.ready }),
                     (!run || ['completed', 'cancelled'].includes(run.status)) && button('启动流程', async () => { if (await act('start', { task: draft })) setDraft('') }, { className: 'primary', disabled: busy || !draft.trim() || !room.ready }),
-                    run && ['waiting_human', 'needs_attention'].includes(run.status) && button('提交处理意见并重试', async () => { if (await act('resume', { message: draft })) setDraft('') }, { className: 'primary', disabled: busy || !draft.trim() })))),
+                    run && (['waiting_human', 'needs_attention'].includes(run.status) || stalled) && button('提交处理意见并重试', async () => { if (await act('resume', { message: draft, executionId: run.execution.id })) setDraft('') }, { className: 'primary', disabled: busy || !draft.trim() })))),
               h('aside', { className: 'graph', 'aria-label': '流程状态图' }, h('h3', null, '流程状态图'),
-                h(WorkflowGraph, { nodes, run, events: data.events, selected: node?.id, onSelect: setNodeId }),
+                h(WorkflowGraph, { nodes, run, events: data.events, states: liveStates, selected: node?.id, onSelect: setNodeId }),
                 node && h('div', { className: 'detail' }, h('strong', null, node.label + ' · 节点详情'), h('p', null, node.instructions), button('打开节点会话', () => ctx.uiWorkspace.openSession(room.sessions[node.id])),
+                  h('p', { className: 'meta' }, '会话状态：' + (liveText[nodeLive?.status] || '状态未知') + (nodeLive?.queued ? ' · 待处理消息 ' + nodeLive.queued : '') + (nodeLive?.background ? ' · 后台任务 ' + nodeLive.background : '') + (nodeLive?.health === 'stalled' ? ' · 持续空闲，等待处理' : '')),
                   h('p', { className: 'meta' }, nodeReport?.data.summary || '当前节点尚未提交结果。')),
                 h('details', { className: 'detail' }, h('summary', null, '事件时间线'), h('ol', { className: 'events' }, ...data.events.filter(e => e.kind !== 'chat.message').map(e => h('li', { key: e.seq }, new Date(e.at).toLocaleTimeString() + ' · ' + (eventLabels[e.kind] || e.kind) + (e.data.summary ? ' · ' + e.data.summary : '')))))))))
       )

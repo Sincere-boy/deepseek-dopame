@@ -93,7 +93,7 @@ export class GraphStore {
   /** Build the request and its stable requestId in the same transaction as activation. */
   activate(room, nodeId, context) {
     const node = room.graph.nodes.find(n => n.id === nodeId), id = randomUUID()
-    const execution = { id, nodeId, sessionId: room.sessions[nodeId], status: 'queued', report: null }
+    const execution = { id, nodeId, sessionId: room.sessions[nodeId], status: 'queued', report: null, createdAt: Date.now() }
     room.run.activeNode = nodeId
     room.run.execution = execution
     room.run.nodeStates[nodeId] = 'queued'
@@ -151,17 +151,18 @@ export class GraphStore {
       return { executionId, completed, next: run.activeNode, status: run.status }
     })
   }
-  resume(id, { message, commandId }) {
+  resume(id, { message, commandId, executionId }, { recoverIdle = false } = {}) {
     return this.change(id, commandId, 'execution.retried', room => {
-      if (!room.run || !['needs_attention', 'waiting_human'].includes(room.run.status)) throw new Error('当前节点无需恢复')
+      if (!room.run || !(['needs_attention', 'waiting_human'].includes(room.run.status) || recoverIdle && room.run.status === 'running')) throw new Error('当前节点无需恢复')
+      if (executionId && executionId !== room.run.execution.id) throw new Error('执行已变化，请刷新状态后重试')
       if (typeof message !== 'string' || !message.trim()) throw new Error('请提供处理意见')
       const previous = room.run.execution.id
       room.run.status = 'running'
       this.activate(room, room.run.activeNode, message)
-      return { previous, executionId: room.run.execution.id, message }
+      return { previous, executionId: room.run.execution.id, message, reason: recoverIdle ? 'confirmed_idle' : 'human_retry' }
     })
   }
-  /** Called only after a cold history snapshot proves no executor survived. */
+  /** Explicit interruption command; absence from a snapshot is not proof. */
   executorLost(sessionId) {
     const room = this.list().find(r => ['running', 'cancelling'].includes(r.run?.status) && r.run.execution.sessionId === sessionId)
     if (!room) return null

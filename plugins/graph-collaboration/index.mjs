@@ -5,6 +5,7 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 import { remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
 import { GraphStore, DEFAULT_GRAPH } from './store.mjs'
 import { createSessionObserver } from './observations.mjs'
+import { SessionHealth } from './session-health.mjs'
 
 export const name = 'graph-collaboration'
 export const inject = ['connection', 'sessionController', 'sessions', 'agents', 'tools']
@@ -16,7 +17,8 @@ export async function apply(ctx) {
   const store = new GraphStore(join(directory, 'graph.sqlite'))
   const abort = new AbortController()
   let dispatching = false, dispatchSettled = Promise.resolve()
-  const { observe, settled } = createSessionObserver({ store, controller: ctx.sessionController, agents: ctx.agents, signal: abort.signal, dispatch })
+  const health = new SessionHealth({ controller: ctx.sessionController, rooms: () => store.list(), agent: id => ctx.agents.get(id), signal: abort.signal })
+  const { observe, settled } = createSessionObserver({ store, controller: ctx.sessionController, signal: abort.signal, dispatch, onActivity: (id, event) => health.activityAt(id, event) })
 
   function owner(sessionId) {
     const room = store.list().find(r => Object.values(r.sessions).includes(sessionId))
@@ -123,7 +125,8 @@ export async function apply(ctx) {
         const url = new URL(request.url)
         if (request.method === 'GET') {
           const id = url.searchParams.get('roomId'), room = id ? store.get(id) : null
-          return Response.json({ rooms: store.list(), room, defaultGraph: DEFAULT_GRAPH,
+          const rooms = store.list()
+          return Response.json({ rooms, room, defaultGraph: DEFAULT_GRAPH, sessionStates: health.snapshot(room ? [room] : rooms),
             events: id ? store.events(id, Number(url.searchParams.get('after') || 0)) : [], deliveries: id ? store.deliveries(id) : [] })
         }
         const body = await request.text()
@@ -133,7 +136,16 @@ export async function apply(ctx) {
         if (args.action === 'create') room = await provision(store.create(args))
         else if (args.action === 'provision') room = await provision(store.get(args.roomId))
         else if (args.action === 'start') room = store.start(args.roomId, args)
-        else if (args.action === 'resume') room = store.resume(args.roomId, args)
+        else if (args.action === 'resume') {
+          await dispatchSettled
+          await health.refresh()
+          const current = store.get(args.roomId)
+          if (!current.run?.execution) throw new Error('没有可恢复的执行')
+          const state = health.forRoom(current)[current.run.execution.sessionId]
+          if (['running', 'queued', 'background'].includes(state.status)) throw new Error('角色会话仍在执行或有待处理任务，不能重复派发')
+          if (state.status !== 'idle') throw new Error('尚未确认角色会话空闲，请等待状态恢复后重试')
+          room = store.resume(args.roomId, args, { recoverIdle: state.health === 'stalled' })
+        }
         else if (args.action === 'cancel') {
           room = store.cancel(args.roomId, args.commandId)
           await dispatchSettled
@@ -157,12 +169,23 @@ export async function apply(ctx) {
     },
   }), 'graph-collaboration authenticated routes')
   for (const room of store.list()) if (room.ready) for (const [role, id] of Object.entries(room.sessions)) observe(id, room.id, role)
-  const timer = setInterval(() => { void dispatch() }, 3000)
+  async function inspect() {
+    await health.refresh()
+    if (!abort.signal.aborted) for (const room of store.list()) {
+      if (room.run?.status === 'cancelling' && ['idle', 'missing'].includes(health.status(room.run.execution.sessionId).status)) {
+        store.finish(room.run.execution.sessionId, room.run.execution.id, false)
+      }
+      if (room.ready) for (const [role, id] of Object.entries(room.sessions)) observe(id, room.id, role)
+    }
+  }
+  const timer = setInterval(() => { void dispatch(); void inspect() }, 5000)
   ctx.effect(() => async () => {
     clearInterval(timer); abort.abort()
     await settled()
     await dispatchSettled
+    if (health.pending) await health.pending
     store.close()
   }, 'graph-collaboration lifecycle')
   void dispatch()
+  void inspect()
 }
