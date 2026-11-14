@@ -23,6 +23,8 @@ async function check(name, form = false) {
     const hits=[];
     function hit(e,clip){
       if(e.disabled||getComputedStyle(e).display==='none')return;
+      // acdert may retain descendant rectangles under display:none containers.
+      for(let p=e.parentElement;p&&p!==root;p=p.parentElement)if(getComputedStyle(p).display==='none')return;
       const r=rect(e), l=Math.max(r.left,clip.left),t=Math.max(r.top,clip.top),rr=Math.min(r.right,clip.right),bb=Math.min(r.bottom,clip.bottom);
       if(rr-l<8||bb-t<8)return;
       const target=document.elementFromPoint((l+rr)/2,(t+bb)/2);
