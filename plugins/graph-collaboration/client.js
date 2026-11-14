@@ -17,7 +17,8 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
   .gc .chat{display:flex;flex-direction:column;flex:none;height:100vh;min-height:760px;width:100%;border-bottom:1px solid #e9edf3}
   .gc .body.graph-only .chat{display:none}
   .gc .chat-title{padding:12px 20px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-  .gc .messages{flex:1;min-height:0;overflow:auto;padding:20px}
+  .gc .chat-title,.gc .compose{position:relative;z-index:1;flex-shrink:0;background:var(--dsw-alias-bg-base,#fff)}
+  .gc .messages{position:relative;z-index:0;flex:1;min-height:0;overflow:auto;padding:20px}
   .gc .message{padding:12px 14px;background:#f3f6fc;border-radius:12px;margin-bottom:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
   .gc .message.user{background:#eaf0ff}
   .gc .message strong{display:block;font-size:12px;margin-bottom:5px;color:#557}
@@ -96,6 +97,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
       const [data, setData] = useState({ rooms: [], events: [] }), [selected, setSelected] = useState(localStorage.getItem('graph-room') || '')
       const [create, setCreate] = useState(false), [name, setName] = useState(''), [cwd, setCwd] = useState(''), [graph, setGraph] = useState('')
       const [draft, setDraft] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
+      const [loadStatus, setLoadStatus] = useState('loading'), [loadError, setLoadError] = useState('')
       const [nodeId, setNodeId] = useState(''), [tab, setTab] = useState('chat')
       const messages = useRef(null), followLatest = useRef(true)
       useEffect(() => {
@@ -103,13 +105,24 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
       }, [selected, data.events.length])
       useEffect(() => {
         const controller = new AbortController(); let timer
+        setLoadStatus('loading')
         async function refresh() {
           try {
             const response = await fetch(endpoint + (selected ? '?roomId=' + encodeURIComponent(selected) : ''), { signal: controller.signal })
             const next = await response.json()
-            if (!response.ok) throw new Error(next.error)
-            if (!controller.signal.aborted) setData(next)
-          } catch (e) { if (!controller.signal.aborted) setError(e.message) }
+            if (!response.ok) {
+              if (selected && next.error === '协作工作区不存在' && !controller.signal.aborted) {
+                select(''); setError('原工作区不存在，请从列表重新选择。'); return
+              }
+              throw new Error(next.error || '工作区服务返回错误')
+            }
+            if (!controller.signal.aborted) { setData(next); setLoadStatus('ready'); setLoadError('') }
+          } catch (e) {
+            if (!controller.signal.aborted) {
+              setLoadStatus('failed')
+              setLoadError(e.message === 'Failed to fetch' ? '无法连接工作区服务。请重新加载；若仍失败，请关闭并重新打开 DSH 应用。' : e.message)
+            }
+          }
           if (!controller.signal.aborted) timer = setTimeout(refresh, 1500)
         }
         refresh(); return () => { controller.abort(); clearTimeout(timer) }
@@ -138,7 +151,8 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
       const chats = data.events.filter(e => e.kind === 'chat.message' || e.kind === 'run.started').map(e => e.kind === 'run.started' ? { ...e, data: { actor: 'user', text: e.data.task || room?.run?.task || '启动任务' } } : e)
       const eventLabels = { 'room.created': '创建工作区', 'room.ready': '节点会话已就绪', 'run.started': '任务开始', 'delivery.accepted': '会话已受理任务', 'node.reported': '节点提交结果', 'node.human_requested': '节点请求人工处理', 'execution.finished': '本轮执行结束', 'execution.retried': '恢复节点执行', 'run.cancelled': '请求取消任务' }
       return h('section', { className: 'gc', 'aria-label': '协作工作区' },
-        h('header', null, h('div', null, h('h2', null, '协作工作区'), h('small', null, '会话独立执行 · 流程事件驱动')), h('span', { style: { flex: 1 } }), button('新建工作区', () => { setCreate(true); setError(''); setGraph(JSON.stringify(data.defaultGraph, null, 2)) })),
+        h('header', null, h('div', null, h('h2', null, '协作工作区'), h('small', null, '会话独立执行 · 流程事件驱动')), h('span', { style: { flex: 1 } }), button('新建工作区', () => { setCreate(true); setError(''); setGraph(JSON.stringify(data.defaultGraph, null, 2)) }, { disabled: busy || !data.defaultGraph || loadStatus === 'failed' })),
+        loadError && h('div', { role: 'alert', className: 'error' }, '工作区加载失败：' + loadError),
         !create && error && h('div', { role: 'alert', className: 'error' }, error),
         create ? h('form', { className: 'form', noValidate: true, onSubmit: createRoom, 'aria-busy': busy },
           h('h3', null, '创建协作工作区'),
@@ -148,11 +162,13 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
           h('details', null, h('summary', null, '流程图配置'), h('p', null, '每个节点声明职责与允许的结果。创建后本工作区使用这份固定配置。'), h('textarea', { 'aria-label': '流程图配置', value: graph, onChange: e => setGraph(e.target.value), rows: 15 })),
           h('div', { className: 'form-feedback' }, error && h('div', { role: 'alert', className: 'error' }, error),
             h('div', { className: 'actions' }, h('button', { type: 'submit', className: 'primary', disabled: busy }, busy ? '正在创建会话…' : '创建并绑定会话'), button('返回', () => { setCreate(false); setError('') })))) : h('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
-          h('div', { className: 'toolbar' }, h('select', { 'aria-label': '选择协作工作区', value: selected, onChange: e => select(e.target.value) }, h('option', { value: '' }, '选择工作区'), ...data.rooms.map(r => h('option', { key: r.id, value: r.id }, r.name))),
+          h('div', { className: 'toolbar' }, h('select', { 'aria-label': '选择协作工作区', value: selected, disabled: data.rooms.length === 0, onChange: e => select(e.target.value) }, h('option', { value: '' }, data.rooms.length ? '选择工作区' : loadStatus === 'loading' ? '正在加载工作区…' : loadStatus === 'failed' ? '工作区加载失败' : '暂无协作工作区'), ...data.rooms.map(r => h('option', { key: r.id, value: r.id }, r.name))),
+            button('重新加载', () => setRevision(n => n + 1)),
+            loadStatus === 'loading' && h('span', { className: 'meta', role: 'status' }, '正在加载…'),
             room && h('span', { className: 'meta' }, !room.ready ? '会话待初始化' : run ? statusText[run.status] : '尚未开始任务'),
             room && !room.ready && button('重试初始化', () => act('provision')),
             run && ['running', 'waiting_human', 'needs_attention'].includes(run.status) && button('取消任务', () => act('cancel'))),
-          !room ? h('div', { className: 'empty' }, '创建一个工作区，为开发、评审和测试分别绑定 DSH 会话。你可以与组织者讨论需求，明确启动后按图执行。') : h('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
+          !room ? h('div', { className: 'empty', role: 'status' }, loadStatus === 'loading' ? '正在加载已有工作区…' : loadStatus === 'failed' ? '工作区暂时无法加载，请点击“重新加载”重试。' : data.rooms.length ? '请选择已有工作区。' : '暂无协作工作区。点击“新建工作区”，为各个节点绑定独立会话。') : h('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
             h('div', { className: 'tabs' }, button('群聊与状态图', () => setTab('chat')), button('状态图', () => setTab('graph'))),
             h('div', { className: 'body ' + (tab === 'chat' ? 'combined' : 'graph-only') },
               h('div', { className: 'chat' }, h('div', { className: 'chat-title' }, h('strong', null, '组织者 · 协作群聊'), button('打开组织者会话', () => ctx.uiWorkspace.openSession(room.sessions.organizer))), h('div', { className: 'messages', role: 'log', 'aria-label': '协作消息', ref: messages, onScroll: e => { const el = e.currentTarget; followLatest.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48 } },
