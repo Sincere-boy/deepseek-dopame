@@ -11,7 +11,8 @@
     "check": "acde check",
     "prepare:runtime": "node scripts/package-runtime.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:layout": "node scripts/verify-layout.mjs"
+    "test:layout": "node scripts/verify-layout.mjs",
+    "test:graph": "node scripts/verify-graph.mjs"
   },
   "devDependencies": {
     "vite": "^6.4.6",

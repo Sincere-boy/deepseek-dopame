@@ -23,4 +23,6 @@ npm run dev
 
 验证范围、已通过功能与平台边界见 [运行验证](docs/validation.md)。`npm test` 运行通信适配层回归测试。
 
+多会话流程管理入口为 **DeepSeek Harness → 协作工作区**，提供群聊、节点状态图、返工、人工介入和事件记录。使用方法、调度边界与验证命令见 [协作工作区插件](plugins/graph-collaboration/README.md)。
+
 在桌面中打开已有对话后，`npm run test:layout` 验证真实标题栏拖动、缩放、滚动和输入区边界。详见 [桌面窗口布局修复](docs/window-layout.md)。

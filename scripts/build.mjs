@@ -8,6 +8,7 @@ if (!existsSync(resolve(root, 'dist/runtime/node_modules/@deepseek-ai/dsh/lib/bi
   throw new Error('Prepare runtime first: npm run prepare:harness')
 }
 mkdirSync(resolve(root, 'dist'), { recursive: true })
+cpSync(resolve(root, 'plugins/graph-collaboration'), resolve(root, 'dist/runtime/node_modules/@dopame/dsh-graph-collaboration'), { recursive: true })
 cpSync(resolve(root, 'src/index.html'), resolve(root, 'dist/index.html'))
 cpSync(resolve(root, 'src/desktop-layout.mjs'), resolve(root, 'dist/desktop-layout.mjs'))
 cpSync(resolve(root, 'src/composer-caret.mjs'), resolve(root, 'dist/composer-caret.mjs'))
