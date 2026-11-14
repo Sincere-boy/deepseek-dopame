@@ -3,7 +3,40 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
   const statusText = { waiting: '等待前序', queued: '待执行', running: '执行中', finishing: '正在收尾', completed: '已完成', needs_attention: '需要处理', waiting_human: '等待人工', cancelling: '正在取消', cancelled: '已取消' }
   const css = `
   .gc{height:100%;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#172033);font:14px system-ui}
-  .gc .body.graph-only{grid-template-columns:1fr}.gc .body.graph-only .chat{display:none}.gc .tabs{display:flex;gap:8px;padding:8px 16px}.gc .diagram{width:100%;max-width:500px;max-height:360px;margin:0 auto}.gc .chat-title{padding:12px 20px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;justify-content:space-between}.gc *{box-sizing:border-box}.gc button,.gc input,.gc textarea,.gc select{font:inherit}.gc button{cursor:pointer;border:1px solid #dce1eb;background:#fff;color:#23304a;border-radius:8px;padding:8px 12px}.gc button:disabled{opacity:.5;cursor:default}.gc button.primary{background:#315ee8;color:#fff;border-color:#315ee8}.gc header{padding:20px 24px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;gap:12px}.gc h2{font-size:20px;margin:0}.gc small{color:#718096}.gc .toolbar{display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid #e9edf3;flex-wrap:wrap}.gc .body{display:grid;grid-template-columns:minmax(240px,1.1fr) minmax(230px,.9fr);flex:1;min-height:0}.gc .chat{display:flex;flex-direction:column;min-height:0;border-right:1px solid #e9edf3}.gc .messages{flex:1;overflow:auto;padding:20px}.gc .message{padding:12px 14px;background:#f3f6fc;border-radius:12px;margin-bottom:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}.gc .message.user{background:#eaf0ff}.gc .message strong{display:block;font-size:12px;margin-bottom:5px;color:#557}.gc .compose{padding:16px;border-top:1px solid #e9edf3}.gc textarea,.gc input,.gc select{border:1px solid #d5ddeb;border-radius:8px;padding:10px;background:#fff;color:#172033}.gc textarea{width:100%;resize:vertical;min-height:72px}.gc .actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}.gc .graph{overflow:auto;padding:20px;background:#f8faff}.gc .detail{border-top:1px solid #dce1eb;margin-top:20px;padding-top:16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}.gc .error{padding:10px 24px;background:#fff1f0;color:#a42222}.gc .empty{padding:32px;color:#718096}.gc .form{padding:24px;overflow:auto;display:flex;flex-direction:column;gap:12px}.gc .form label{display:flex;flex-direction:column;gap:6px}.gc .events{max-height:220px;overflow:auto;font-size:12px;line-height:1.8}.gc .events li{margin-bottom:6px}.gc .meta{font-size:12px;color:#718096}@media(max-width:900px){.gc .body{display:flex;flex-direction:column}.gc .chat,.gc .graph{flex:1}.gc .tabs{display:flex;gap:8px;padding:8px 16px}.gc .body.chat-only .graph{display:none}.gc .body.graph-only .chat{display:none}}
+  .gc *{box-sizing:border-box}
+  .gc button,.gc input,.gc textarea,.gc select{font:inherit}
+  .gc button{cursor:pointer;border:1px solid #dce1eb;background:#fff;color:#23304a;border-radius:8px;padding:8px 12px}
+  .gc button:disabled{opacity:.5;cursor:default}
+  .gc button.primary{background:#315ee8;color:#fff;border-color:#315ee8}
+  .gc header{padding:20px 24px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;gap:12px}
+  .gc h2{font-size:20px;margin:0}
+  .gc small{color:#718096}
+  .gc .toolbar{display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid #e9edf3;flex-wrap:wrap}
+  .gc .tabs{display:flex;gap:8px;padding:8px 16px}
+  .gc .body{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto}
+  .gc .chat{display:flex;flex-direction:column;flex:none;height:440px;min-height:360px;width:100%;border-bottom:1px solid #e9edf3}
+  .gc .body.graph-only .chat{display:none}
+  .gc .chat-title{padding:12px 20px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .gc .messages{flex:1;min-height:0;overflow:auto;padding:20px}
+  .gc .message{padding:12px 14px;background:#f3f6fc;border-radius:12px;margin-bottom:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+  .gc .message.user{background:#eaf0ff}
+  .gc .message strong{display:block;font-size:12px;margin-bottom:5px;color:#557}
+  .gc .compose{padding:16px;border-top:1px solid #e9edf3}
+  .gc textarea,.gc input,.gc select{border:1px solid #d5ddeb;border-radius:8px;padding:10px;background:#fff;color:#172033}
+  .gc textarea{width:100%;resize:vertical;min-height:72px}
+  .gc .actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .gc .graph{flex:none;width:100%;padding:20px;background:#f8faff}
+  .gc .diagram{width:100%;margin:0 auto}
+  .gc .detail{border-top:1px solid #dce1eb;margin-top:20px;padding-top:16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+  .gc .error{padding:10px 24px;background:#fff1f0;color:#a42222}
+  .gc .empty{padding:32px;color:#718096}
+  .gc .form{padding:24px;overflow:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
+  .gc .form label{display:flex;flex-direction:column;gap:6px}
+  .gc .form-feedback{position:sticky;bottom:0;background:var(--dsw-alias-bg-base,#fff);padding:12px 0;border-top:1px solid #e9edf3}
+  .gc .form-feedback .error{padding:10px 12px;border-radius:8px}
+  .gc .events{max-height:220px;overflow:auto;font-size:12px;line-height:1.8}
+  .gc .events li{margin-bottom:6px}
+  .gc .meta{font-size:12px;color:#718096}
   `
   const endpoint = '/api/graph-collaboration'
   function WorkflowGraph({ nodes, run, events, selected, onSelect }) {
@@ -88,6 +121,15 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
         catch (e) { setError(e.message); return false }
         finally { setBusy(false) }
       }
+      async function createRoom(event) {
+        event.preventDefault()
+        if (busy) return
+        const missing = [!name.trim() && '工作区名称', !cwd.trim() && '项目工作目录'].filter(Boolean)
+        if (missing.length) { setError('请填写' + missing.join('和') + '。'); return }
+        let config
+        try { config = JSON.parse(graph) } catch { setError('流程图配置不是有效 JSON，请检查括号、逗号和引号。'); return }
+        if (await act('create', { name: name.trim(), cwd: cwd.trim(), graph: config })) setCreate(false)
+      }
       const room = data.room?.id === selected ? data.room : null, run = room?.run, nodes = room?.graph.nodes || [], node = nodes.find(n => n.id === nodeId) || nodes.find(n => n.id === run?.activeNode) || nodes[0]
       const runEvents = data.events.slice(data.events.findLastIndex(e => e.kind === 'run.started') + 1)
       const nodeReport = runEvents.findLast(e => ['node.reported', 'node.human_requested'].includes(e.kind) && e.data.nodeId === node?.id)
@@ -96,21 +138,23 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
       const chats = data.events.filter(e => e.kind === 'chat.message' || e.kind === 'run.started').map(e => e.kind === 'run.started' ? { ...e, data: { actor: 'user', text: e.data.task || room?.run?.task || '启动任务' } } : e)
       const eventLabels = { 'room.created': '创建工作区', 'room.ready': '节点会话已就绪', 'run.started': '任务开始', 'delivery.accepted': '会话已受理任务', 'node.reported': '节点提交结果', 'node.human_requested': '节点请求人工处理', 'execution.finished': '本轮执行结束', 'execution.retried': '恢复节点执行', 'run.cancelled': '请求取消任务' }
       return h('section', { className: 'gc', 'aria-label': '协作工作区' },
-        h('header', null, h('div', null, h('h2', null, '协作工作区'), h('small', null, '会话独立执行 · 流程事件驱动')), h('span', { style: { flex: 1 } }), button('新建工作区', () => { setCreate(true); setGraph(JSON.stringify(data.defaultGraph, null, 2)) })),
-        error && h('div', { role: 'alert', className: 'error' }, error),
-        create ? h('form', { className: 'form', onSubmit: async e => { e.preventDefault(); let config; try { config = JSON.parse(graph) } catch { setError('图配置不是有效 JSON'); return }; if (await act('create', { name, cwd, graph: config })) setCreate(false) } },
+        h('header', null, h('div', null, h('h2', null, '协作工作区'), h('small', null, '会话独立执行 · 流程事件驱动')), h('span', { style: { flex: 1 } }), button('新建工作区', () => { setCreate(true); setError(''); setGraph(JSON.stringify(data.defaultGraph, null, 2)) })),
+        !create && error && h('div', { role: 'alert', className: 'error' }, error),
+        create ? h('form', { className: 'form', noValidate: true, onSubmit: createRoom, 'aria-busy': busy },
           h('h3', null, '创建协作工作区'),
+          h('p', { className: 'meta' }, '名称和项目目录均为必填项。填写项目的绝对路径后，再创建并绑定会话。'),
           h('label', null, '工作区名称', h('input', { 'aria-label': '工作区名称', value: name, onChange: e => setName(e.target.value), required: true })),
           h('label', null, '项目工作目录', h('input', { 'aria-label': '项目工作目录', placeholder: '/你的项目绝对路径', value: cwd, onChange: e => setCwd(e.target.value), required: true })),
           h('details', null, h('summary', null, '流程图配置'), h('p', null, '每个节点声明职责与允许的结果。创建后本工作区使用这份固定配置。'), h('textarea', { 'aria-label': '流程图配置', value: graph, onChange: e => setGraph(e.target.value), rows: 15 })),
-          h('div', { className: 'actions' }, h('button', { type: 'submit', className: 'primary', disabled: busy }, busy ? '正在创建会话…' : '创建并绑定会话'), button('返回', () => setCreate(false)))) : h('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
+          h('div', { className: 'form-feedback' }, error && h('div', { role: 'alert', className: 'error' }, error),
+            h('div', { className: 'actions' }, h('button', { type: 'submit', className: 'primary', disabled: busy }, busy ? '正在创建会话…' : '创建并绑定会话'), button('返回', () => { setCreate(false); setError('') })))) : h('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
           h('div', { className: 'toolbar' }, h('select', { 'aria-label': '选择协作工作区', value: selected, onChange: e => select(e.target.value) }, h('option', { value: '' }, '选择工作区'), ...data.rooms.map(r => h('option', { key: r.id, value: r.id }, r.name))),
             room && h('span', { className: 'meta' }, !room.ready ? '会话待初始化' : run ? statusText[run.status] : '尚未开始任务'),
             room && !room.ready && button('重试初始化', () => act('provision')),
             run && ['running', 'waiting_human', 'needs_attention'].includes(run.status) && button('取消任务', () => act('cancel'))),
           !room ? h('div', { className: 'empty' }, '创建一个工作区，为开发、评审和测试分别绑定 DSH 会话。你可以与组织者讨论需求，明确启动后按图执行。') : h('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
             h('div', { className: 'tabs' }, button('群聊与状态图', () => setTab('chat')), button('状态图', () => setTab('graph'))),
-            h('div', { className: 'body ' + (tab === 'chat' ? 'chat-only' : 'graph-only') },
+            h('div', { className: 'body ' + (tab === 'chat' ? 'combined' : 'graph-only') },
               h('div', { className: 'chat' }, h('div', { className: 'chat-title' }, h('strong', null, '组织者 · 协作群聊'), button('打开组织者会话', () => ctx.uiWorkspace.openSession(room.sessions.organizer))), h('div', { className: 'messages', role: 'log', 'aria-label': '协作消息', ref: messages, onScroll: e => { const el = e.currentTarget; followLatest.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48 } },
                 !chats.length && h('p', { className: 'meta' }, '在下方描述需求，与组织者交流；点击“启动流程”会直接按图执行输入的任务。'),
                 ...chats.map(e => h('article', { key: e.seq, className: 'message ' + e.data.actor }, h('strong', null, labels[e.data.actor] || e.data.actor), e.data.text))),
