@@ -2,11 +2,12 @@ import { createHarnessBridge } from './src/backend/bridge.mjs'
 import { StringDecoder } from 'node:string_decoder'
 import { pathToFileURL } from 'node:url'
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 const runtime = resolve(import.meta.dirname, '../web/runtime')
+const acde = JSON.parse(readFileSync(join(runtime, 'dopame-acde.json'), 'utf8'))
 const preload = resolve(import.meta.dirname, 'acde-listen.js')
 const data = process.env.ACDE_APP_DATA
 if (!data) throw new Error('This backend must run inside acde')
@@ -30,7 +31,9 @@ const child = spawn(process.execPath, [
   'web', '--patch', join(runtime, 'dopame.patch.yml'), '--port', '3080', '--trusted-host', 'acde.local', '--no-open',
 ], {
   cwd: data,
-  env: { ...process.env, ACDE_APP_SOCKETS: childSockets, DSH_HOME: join(data, 'harness'), DSH_TELEMETRY_DISABLED: '1' },
+  env: { ...process.env, ACDE_APP_SOCKETS: childSockets, DSH_HOME: join(data, 'harness'), DSH_TELEMETRY_DISABLED: '1',
+    DOPAME_ACDE_COMMAND: acde.command, DOPAME_ACDE_PROJECT: acde.project,
+    DOPAME_ACDE_ENV: JSON.stringify(acde.environment) },
   stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
 })
 const startupTimer = setTimeout(() => {
