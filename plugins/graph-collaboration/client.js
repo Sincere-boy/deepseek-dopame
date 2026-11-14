@@ -101,14 +101,29 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
     return data
   }
   function apply(ctx) {
-    ctx.effect(() => { const tag = document.createElement('style'); tag.textContent = css; document.head.append(tag); return () => tag.remove() }, 'graph-collaboration styles')
+    let styleTag
+    ctx.effect(() => { styleTag = document.createElement('style'); styleTag.textContent = css; document.head.append(styleTag); return () => { styleTag.remove(); styleTag = null } }, 'graph-collaboration styles')
     function Panel() {
       const [data, setData] = useState({ rooms: [], events: [] }), [selected, setSelected] = useState(localStorage.getItem('graph-room') || '')
       const [create, setCreate] = useState(false), [name, setName] = useState(''), [cwd, setCwd] = useState(''), [graph, setGraph] = useState('')
       const [draft, setDraft] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false), [revision, setRevision] = useState(0)
       const [loadStatus, setLoadStatus] = useState('loading'), [loadError, setLoadError] = useState('')
       const [nodeId, setNodeId] = useState(''), [tab, setTab] = useState('chat')
-      const messages = useRef(null), followLatest = useRef(true)
+      const root = useRef(null), messages = useRef(null), followLatest = useRef(true)
+      useEffect(() => {
+        let frame, width, height
+        const observer = new ResizeObserver(() => {
+          const rect = root.current.getBoundingClientRect()
+          if (rect.width === width && rect.height === height) return
+          width = rect.width; height = rect.height
+          cancelAnimationFrame(frame)
+          // acdert retains stale stacking clips when an overflow container grows.
+          // Reparse only this plugin's styles without remounting inputs or messages.
+          frame = requestAnimationFrame(() => { if (styleTag) styleTag.textContent = css })
+        })
+        observer.observe(root.current)
+        return () => { observer.disconnect(); cancelAnimationFrame(frame) }
+      }, [])
       useEffect(() => {
         if (messages.current && followLatest.current) messages.current.scrollTop = messages.current.scrollHeight
       }, [selected, data.events.length])
@@ -161,7 +176,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
       const button = (text, onClick, extra = {}) => h('button', { type: 'button', disabled: busy, onClick, ...extra }, text)
       const chats = data.events.filter(e => e.kind === 'chat.message' || e.kind === 'run.started').map(e => e.kind === 'run.started' ? { ...e, data: { actor: 'user', text: e.data.task || room?.run?.task || '启动任务' } } : e)
       const eventLabels = { 'room.created': '创建工作区', 'room.ready': '节点会话已就绪', 'run.started': '任务开始', 'delivery.accepted': '会话已受理任务', 'node.reported': '节点提交结果', 'node.human_requested': '节点请求人工处理', 'execution.finished': '本轮执行结束', 'execution.retried': '恢复节点执行', 'run.cancelled': '请求取消任务' }
-      return h('section', { className: 'gc', 'aria-label': '协作工作区' },
+      return h('section', { ref: root, className: 'gc', 'aria-label': '协作工作区' },
         h('header', null, h('div', null, h('h2', null, '协作工作区'), h('small', null, '会话独立执行 · 流程事件驱动')), h('span', { style: { flex: 1 } }), button('新建工作区', () => { setCreate(true); setError(''); setGraph(JSON.stringify(data.defaultGraph, null, 2)) }, { disabled: busy || !data.defaultGraph || loadStatus === 'failed' })),
         loadError && h('div', { role: 'alert', className: 'error' }, '工作区加载失败：' + loadError),
         !create && error && h('div', { role: 'alert', className: 'error' }, error),
