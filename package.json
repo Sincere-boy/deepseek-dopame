@@ -14,7 +14,8 @@
     "test:layout": "node scripts/verify-layout.mjs",
     "test:graph": "node scripts/verify-graph.mjs",
     "test:graph-create": "node scripts/verify-graph-create.mjs",
-    "test:graph-load": "node scripts/verify-graph-load.mjs"
+    "test:graph-load": "node scripts/verify-graph-load.mjs",
+    "test:graph-layers": "node scripts/verify-graph-layering.mjs"
   },
   "devDependencies": {
     "vite": "^6.4.6",

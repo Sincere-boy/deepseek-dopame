@@ -2,24 +2,29 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
   const { createElement: h, useEffect, useRef, useState } = require('react')
   const statusText = { waiting: '等待前序', queued: '待执行', running: '执行中', finishing: '正在收尾', completed: '已完成', needs_attention: '需要处理', waiting_human: '等待人工', cancelling: '正在取消', cancelled: '已取消' }
   const liveText = { running: '执行中', queued: '排队', background: '后台任务', idle: '空闲', missing: '会话缺失', unknown: '状态未知' }
+  // Scope stacking to each scroller. Elevate individual controls, not whole
+  // scrolling bars: acdert otherwise paints or hit-tests them outside the clip.
   const css = `
-  .gc{height:100%;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#172033);font:14px system-ui}
+  .gc{position:relative;z-index:0;isolation:isolate;overflow:hidden;height:100%;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base,#fff);color:var(--dsw-alias-label-primary,#172033);font:14px system-ui}
   .gc *{box-sizing:border-box}
   .gc button,.gc input,.gc textarea,.gc select{font:inherit}
   .gc button{cursor:pointer;border:1px solid #dce1eb;background:#fff;color:#23304a;border-radius:8px;padding:8px 12px}
   .gc button:disabled{opacity:.5;cursor:default}
   .gc button.primary{background:#315ee8;color:#fff;border-color:#315ee8}
-  .gc header{padding:20px 24px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;gap:12px}
+  .gc header{padding:20px 24px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .gc header,.gc .toolbar,.gc .tabs{position:relative;z-index:2;flex-shrink:0;background:var(--dsw-alias-bg-base,#fff)}
   .gc h2{font-size:20px;margin:0}
   .gc small{color:#718096}
   .gc .toolbar{display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid #e9edf3;flex-wrap:wrap}
-  .gc .tabs{display:flex;gap:8px;padding:8px 16px}
-  .gc .body{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto}
-  .gc .chat{display:flex;flex-direction:column;flex:none;height:100vh;min-height:760px;width:100%;border-bottom:1px solid #e9edf3}
+  .gc .toolbar select{flex:1 1 240px;min-width:0;max-width:100%}
+  .gc .tabs{display:flex;gap:8px;padding:8px 16px;flex-wrap:wrap}
+  .gc .body{position:relative;z-index:0;isolation:isolate;display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto}
+  .gc .chat{position:relative;z-index:0;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;flex:none;height:100vh;min-height:760px;width:100%;border-bottom:1px solid #e9edf3}
   .gc .body.graph-only .chat{display:none}
   .gc .chat-title{padding:12px 20px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-  .gc .chat-title,.gc .compose{position:relative;z-index:1;flex-shrink:0;background:var(--dsw-alias-bg-base,#fff)}
-  .gc .messages{position:relative;z-index:0;flex:1;min-height:0;overflow:auto;padding:20px}
+  .gc .chat-title,.gc .compose{flex-shrink:0;background:var(--dsw-alias-bg-base,#fff)}
+  .gc .chat-title button,.gc .compose textarea,.gc .compose button{position:relative;z-index:1}
+  .gc .messages{flex:1;min-height:0;overflow:auto;padding:20px}
   .gc .message{padding:12px 14px;background:#f3f6fc;border-radius:12px;margin-bottom:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
   .gc .message.user{background:#eaf0ff}
   .gc .message strong{display:block;font-size:12px;margin-bottom:5px;color:#557}
@@ -27,14 +32,16 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
   .gc textarea,.gc input,.gc select{border:1px solid #d5ddeb;border-radius:8px;padding:10px;background:#fff;color:#172033}
   .gc textarea{width:100%;resize:vertical;min-height:72px}
   .gc .actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-  .gc .graph{flex:none;width:100%;padding:20px;background:#f8faff}
-  .gc .diagram{width:100%;margin:0 auto}
+  .gc .graph{position:relative;z-index:0;isolation:isolate;overflow:hidden;flex:none;width:100%;padding:20px;background:#f8faff}
+  .gc .diagram{z-index:0;isolation:isolate;overflow:hidden;width:100%;margin:0 auto}
+  .gc .diagram button{z-index:1}
   .gc .detail{border-top:1px solid #dce1eb;margin-top:20px;padding-top:16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
   .gc .error{padding:10px 24px;background:#fff1f0;color:#a42222}
   .gc .empty{padding:32px;color:#718096}
-  .gc .form{padding:24px;overflow:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
+  .gc .form{position:relative;z-index:0;isolation:isolate;flex:1;padding:24px;overflow:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
+  .gc .form > *{flex-shrink:0}
   .gc .form label{display:flex;flex-direction:column;gap:6px}
-  .gc .form-feedback{position:sticky;bottom:0;background:var(--dsw-alias-bg-base,#fff);padding:12px 0;border-top:1px solid #e9edf3}
+  .gc .form-feedback{background:var(--dsw-alias-bg-base,#fff);padding:12px 0;border-top:1px solid #e9edf3}
   .gc .form-feedback .error{padding:10px 12px;border-radius:8px}
   .gc .events{max-height:220px;overflow:auto;font-size:12px;line-height:1.8}
   .gc .events li{margin-bottom:6px}
