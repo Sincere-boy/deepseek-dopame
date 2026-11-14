@@ -8,15 +8,9 @@
       name: '@deepseek-ai/dsh-host-directory-picker-browse'
     - id: dopame-directory-picker-ui
       name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'
-    # Reuse this DSH release's MCP discovery, cancellation and image projection.
+    # Reuse the official bridge inside each Agent's own scope and workspace.
     - id: dopame-acde-mcp
-      name: '@deepseek-ai/dsh-mcp-client'
+      name: '@dopame/dsh-acde-mcp'
       config:
-        serverName: acde
-        transport: stdio
         command: !!js process.env.DOPAME_ACDE_COMMAND
-        args: [mcp]
-        cwd: !!js process.env.DOPAME_ACDE_PROJECT
         env: !!js 'JSON.parse(process.env.DOPAME_ACDE_ENV)'
-        toolCallTimeoutMs: 60000
-        failOnStartupError: true

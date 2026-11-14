@@ -9,6 +9,7 @@ if (!existsSync(resolve(root, 'dist/runtime/node_modules/@deepseek-ai/dsh/lib/bi
 }
 mkdirSync(resolve(root, 'dist'), { recursive: true })
 cpSync(resolve(root, 'plugins/graph-collaboration'), resolve(root, 'dist/runtime/node_modules/@dopame/dsh-graph-collaboration'), { recursive: true })
+cpSync(resolve(root, 'plugins/acde-mcp'), resolve(root, 'dist/runtime/node_modules/@dopame/dsh-acde-mcp'), { recursive: true })
 cpSync(resolve(root, 'src/index.html'), resolve(root, 'dist/index.html'))
 cpSync(resolve(root, 'src/desktop-layout.mjs'), resolve(root, 'dist/desktop-layout.mjs'))
 cpSync(resolve(root, 'src/composer-caret.mjs'), resolve(root, 'dist/composer-caret.mjs'))
@@ -16,7 +17,7 @@ cpSync(resolve(root, 'src/dopame.patch.yml'), resolve(root, 'dist/runtime/dopame
 cpSync(resolve(root, 'src/backend/child-lifetime.mjs'), resolve(root, 'dist/runtime/dopame-child-lifetime.mjs'))
 const install = process.env.ACDE_INSTALL ?? join(homedir(), '.acde')
 writeFileSync(resolve(root, 'dist/runtime/dopame-acde.json'), JSON.stringify({
-  project: root, command: join(install, 'bin', process.platform === 'win32' ? 'acde.exe' : 'acde'),
+  command: join(install, 'bin', process.platform === 'win32' ? 'acde.exe' : 'acde'),
   // MCP's default child environment omits Unix session-discovery directories.
   environment: Object.fromEntries(['TMPDIR', 'TMP', 'TEMP', 'XDG_RUNTIME_DIR']
     .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]])),

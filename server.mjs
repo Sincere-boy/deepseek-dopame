@@ -1,4 +1,5 @@
 import { createHarnessBridge } from './src/backend/bridge.mjs'
+import { acquireHarnessLease } from './src/backend/instance-lease.mjs'
 import { StringDecoder } from 'node:string_decoder'
 import { pathToFileURL } from 'node:url'
 import { spawn } from 'node:child_process'
@@ -12,16 +13,20 @@ const preload = resolve(import.meta.dirname, 'acde-listen.js')
 const data = process.env.ACDE_APP_DATA
 if (!data) throw new Error('This backend must run inside acde')
 mkdirSync(data, { recursive: true })
+const lease = acquireHarnessLease(join(data, 'harness-instance.sqlite'))
+process.once('exit', () => lease.close())
 // Local plugins resolve from the DSH profile, like an installed third-party
 // dependency; their source remains part of the deployed application package.
-const pluginTarget = join(runtime, 'node_modules/@dopame/dsh-graph-collaboration')
-const pluginLink = join(data, 'harness/profiles/web/node_modules/@dopame/dsh-graph-collaboration')
-mkdirSync(join(pluginLink, '..'), { recursive: true })
-const existingPlugin = lstatSync(pluginLink, { throwIfNoEntry: false })
-if (existingPlugin && (!existingPlugin.isSymbolicLink() || readlinkSync(pluginLink) !== pluginTarget)) {
-  throw new Error('Graph plugin path conflicts with an existing profile dependency')
+for (const plugin of ['dsh-graph-collaboration', 'dsh-acde-mcp']) {
+  const pluginTarget = join(runtime, 'node_modules/@dopame', plugin)
+  const pluginLink = join(data, 'harness/profiles/web/node_modules/@dopame', plugin)
+  mkdirSync(join(pluginLink, '..'), { recursive: true })
+  const existingPlugin = lstatSync(pluginLink, { throwIfNoEntry: false })
+  if (existingPlugin && (!existingPlugin.isSymbolicLink() || readlinkSync(pluginLink) !== pluginTarget)) {
+    throw new Error(`${plugin} path conflicts with an existing profile dependency`)
+  }
+  if (!existingPlugin) symlinkSync(pluginTarget, pluginLink, process.platform === 'win32' ? 'junction' : 'dir')
 }
-if (!existingPlugin) symlinkSync(pluginTarget, pluginLink, process.platform === 'win32' ? 'junction' : 'dir')
 if (!existsSync(join(runtime, 'node_modules/@deepseek-ai/dsh/lib/bin.js'))) throw new Error('Packaged Harness runtime missing')
 // Use the deployed Node package: JS bundlers turn ws's optional native
 // accelerators into stubs that fail on larger masked frames.
@@ -42,7 +47,7 @@ const child = spawn(process.execPath, [
 ], {
   cwd: data,
   env: { ...process.env, ACDE_APP_SOCKETS: childSockets, DSH_HOME: join(data, 'harness'), DSH_TELEMETRY_DISABLED: '1',
-    DOPAME_ACDE_COMMAND: acde.command, DOPAME_ACDE_PROJECT: acde.project,
+    DOPAME_ACDE_COMMAND: acde.command,
     DOPAME_ACDE_ENV: JSON.stringify(acde.environment) },
   stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
 })

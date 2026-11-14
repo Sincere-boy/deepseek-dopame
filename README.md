@@ -25,4 +25,8 @@ npm run dev
 
 多会话流程管理入口为 **DeepSeek Harness → 协作工作区**，提供群聊、节点状态图、返工、人工介入和事件记录。使用方法、调度边界与验证命令见 [协作工作区插件](plugins/graph-collaboration/README.md)。
 
+acde 工具复用官方 MCP 桥接，每个会话按所选工作区独立连接。`start` 的相对目录以该会话工作区为基准；会话启动的开发实例、默认控制目标和本地服务入口相互隔离。关闭会话会回收其 MCP 连接及所启动实例。DSH 同一数据目录只允许一个后端持有运行锁，重复启动会明确报错，不能覆盖原服务入口。
+
+`acde build && npm run test:mcp-isolation` 使用两个临时工作区和真实 MCP 工具，验证首轮工具发现、相对目录、同名应用后端隔离和停止隔离，不调用模型。
+
 在桌面中打开已有对话后，`npm run test:layout` 验证真实标题栏拖动、缩放、滚动和输入区边界。详见 [桌面窗口布局修复](docs/window-layout.md)。

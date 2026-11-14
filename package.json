@@ -15,7 +15,8 @@
     "test:graph": "node scripts/verify-graph.mjs",
     "test:graph-create": "node scripts/verify-graph-create.mjs",
     "test:graph-load": "node scripts/verify-graph-load.mjs",
-    "test:graph-layers": "node scripts/verify-graph-layering.mjs"
+    "test:graph-layers": "node scripts/verify-graph-layering.mjs",
+    "test:mcp-isolation": "node scripts/verify-mcp-isolation.mjs"
   },
   "devDependencies": {
     "vite": "^6.4.6",
