@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
 import { GraphStore, DEFAULT_GRAPH } from './store.mjs'
-import { promptRequestId } from './events.mjs'
+import { createSessionObserver } from './observations.mjs'
 
 export const name = 'graph-collaboration'
 export const inject = ['connection', 'sessionController', 'sessions', 'agents', 'tools']
@@ -16,7 +16,7 @@ export async function apply(ctx) {
   const store = new GraphStore(join(directory, 'graph.sqlite'))
   const abort = new AbortController()
   let dispatching = false, dispatchSettled = Promise.resolve()
-  const observers = new Map()
+  const { observe, settled } = createSessionObserver({ store, controller: ctx.sessionController, agents: ctx.agents, signal: abort.signal, dispatch })
 
   function owner(sessionId) {
     const room = store.list().find(r => Object.values(r.sessions).includes(sessionId))
@@ -39,51 +39,6 @@ export async function apply(ctx) {
       observe(sessionId, room.id, role)
     }
     return store.provisioned(room.id)
-  }
-  function observe(sessionId, roomId, role) {
-    if (observers.has(sessionId)) return
-    const promise = (async () => {
-      for await (const frame of ctx.sessionController.follow({ address: { kind: 'session', sessionId }, maxMessages: 1000 }, abort.signal)) {
-        const entries = frame.type === 'snapshot' ? frame.records : [frame]
-        for (const item of entries) {
-          const event = item.event ?? (item.type === 'event' ? item.event : null)
-          if (!event) continue
-          if (event.type === 'assistant/message') {
-            const text = event.data.message.content.filter(b => b.type === 'text').map(b => b.text).join('\n')
-            if (text.trim()) store.message(roomId, { commandId: `session:${sessionId}:${event.seq}`, actor: role, text })
-          }
-          // Only an end belonging to the dispatched prompt may settle that execution.
-          // The exact association is recovered from durable user-message source ids.
-          if (event.type === 'user/message') {
-            const execution = store.get(roomId).run?.execution
-            if (execution?.sessionId === sessionId && promptRequestId(event) === execution.id) {
-              observers.get(sessionId).executionId = execution.id
-            }
-          }
-          if (event.type === 'turn/end') {
-            const executionId = observers.get(sessionId)?.executionId
-            if (executionId) {
-              store.finish(sessionId, executionId, event.data.reason.kind === 'completed')
-              observers.get(sessionId).executionId = null
-              void dispatch()
-            }
-          }
-        }
-        if (frame.type === 'snapshot') {
-          const executionId = observers.get(sessionId)?.executionId
-          // A cold persisted turn without an end has no surviving executor.
-          // Preserve its evidence and require an explicit retry with a new id.
-          if (!ctx.agents.get(sessionId)) {
-            if (executionId) store.finish(sessionId, executionId, false)
-            else store.executorLost(sessionId)
-            observers.get(sessionId).executionId = null
-          }
-        }
-      }
-    })().catch(error => {
-      if (!abort.signal.aborted) console.error('Graph session observation failed:', error.message)
-    })
-    observers.set(sessionId, { promise, executionId: null })
   }
   async function dispatch() {
     if (dispatching || abort.signal.aborted) return
@@ -205,7 +160,7 @@ export async function apply(ctx) {
   const timer = setInterval(() => { void dispatch() }, 3000)
   ctx.effect(() => async () => {
     clearInterval(timer); abort.abort()
-    await Promise.allSettled([...observers.values()].map(o => o.promise))
+    await settled()
     await dispatchSettled
     store.close()
   }, 'graph-collaboration lifecycle')
