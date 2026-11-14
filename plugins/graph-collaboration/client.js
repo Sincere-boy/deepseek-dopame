@@ -14,7 +14,7 @@ window.__ModuleLoader__.load({ id: '@dopame/dsh-graph-collaboration', factory(re
   .gc .toolbar{display:flex;gap:8px;padding:12px 24px;border-bottom:1px solid #e9edf3;flex-wrap:wrap}
   .gc .tabs{display:flex;gap:8px;padding:8px 16px}
   .gc .body{display:flex;flex-direction:column;flex:1;min-height:0;overflow:auto}
-  .gc .chat{display:flex;flex-direction:column;flex:none;height:440px;min-height:360px;width:100%;border-bottom:1px solid #e9edf3}
+  .gc .chat{display:flex;flex-direction:column;flex:none;height:100vh;min-height:760px;width:100%;border-bottom:1px solid #e9edf3}
   .gc .body.graph-only .chat{display:none}
   .gc .chat-title{padding:12px 20px;border-bottom:1px solid #e9edf3;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .gc .messages{flex:1;min-height:0;overflow:auto;padding:20px}
